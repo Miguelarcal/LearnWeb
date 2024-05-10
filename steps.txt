@@ -1,0 +1,9 @@
+- Creado environment envLearnWeb
+
+- Instalado astro 
+pip install astro
+
+- Instalar symfony
+https://symfony.com/download
+
+
