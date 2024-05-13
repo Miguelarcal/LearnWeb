@@ -6,4 +6,22 @@ pip install astro
 - Instalar symfony
 https://symfony.com/download
 
+- Instalamos PHP
+https://www.php.net/manual/en/install.unix.debian.php
 
+- Iniciamos Apache
+/etc/init.d/apache2 start
+(Parar apache)
+/etc/init.d/apache2 stop
+
+- Instalar php-mysql
+
+- Instalar mariadb-server
+
+- Instalar composer
+
+- Instalar phpmyadmin
+
+- Configurado phpmyadmin
+
+- Creado la base de datos LearnWeb
