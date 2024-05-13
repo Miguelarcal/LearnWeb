@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}TutorialInCourse{% endblock %}
+
+{% block body %}
+    <h1>TutorialInCourse</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ tutorial_in_course.id }}</td>
+            </tr>
+            <tr>
+                <th>OrderNumber</th>
+                <td>{{ tutorial_in_course.orderNumber }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_tutorial_in_course_index') }}">back to list</a>
+
+    <a href="{{ path('app_tutorial_in_course_edit', {'id': tutorial_in_course.id}) }}">edit</a>
+
+    {{ include('tutorial_in_course/_delete_form.html.twig') }}
+{% endblock %}

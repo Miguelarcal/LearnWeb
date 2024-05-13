@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}TutorialInCourse index{% endblock %}
+
+{% block body %}
+    <h1>TutorialInCourse index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>OrderNumber</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for tutorial_in_course in tutorial_in_courses %}
+            <tr>
+                <td>{{ tutorial_in_course.id }}</td>
+                <td>{{ tutorial_in_course.orderNumber }}</td>
+                <td>
+                    <a href="{{ path('app_tutorial_in_course_show', {'id': tutorial_in_course.id}) }}">show</a>
+                    <a href="{{ path('app_tutorial_in_course_edit', {'id': tutorial_in_course.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="3">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_tutorial_in_course_new') }}">Create new</a>
+{% endblock %}
