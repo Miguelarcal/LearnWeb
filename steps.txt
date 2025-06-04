@@ -433,6 +433,33 @@ security:
 
 Github - Subirlo al repositorio, commits, etc, bajarlo del repositorio...
 
+*** Instalamos Git ***
+*** En debian/Ubuntu ***
+sudo apt update && sudo apt install git
+*** En Windows instalamos el ejecutable desde https://git-scm.com/downloads/win y al ejecutar nos aseguramos de marcar "Add Git to PATH" ***
+
+*** verificamos la instalación ***
+git --version
+
+*** Configuramos el usuario y email ***
+git config --global user.name "Tu Nombre"
+git config --global user.email "tu-email@example.com"
+
+*** Copiamos el repositorio ***
+git remote add origin https://github.com/tu-usuario/LearnWeb.git
+
+*** Nos vamos a la rama main ***
+git branch -M main
+
+*** añadimos los cambios al primer commit ***
+git add .
+
+*** creamos el commit ***
+git commit -m "Initial commit: "Breve descripción de los cambios"
+
+*** subimos el commit ***
+git push -u origin main
+
 --------------------------------------------------------------------------------
 
 Instalación y ejecución del proyecto en local
@@ -513,7 +540,7 @@ symfony server:status
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 *** En windows descargamos Node.js (versión LTS) desde https://nodejs.org/es ***
-
+*** Al ejecutar el instalador nos aseguramos de marcar la opción "Add to PATH" ***
 
 *** Verificamos la instalación ***
 node -v
@@ -531,7 +558,9 @@ sudo lsof -i :4321,3306,8000
 *** O en WINDOWS ***
 netstat -ano | findstr ":4321 :3306 :8000"
 
+---------------------------------------------------
 
+DATOS DE PRUEBA:
 
 
 
