@@ -1,0 +1,28 @@
+---
+import Layout from '@layouts/Layout.astro';
+import MemberCard from '@components/MemberCard.astro';
+import { getUsers } from '@api/useCases';
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+
+const users = await getUsers(Astro.cookies.get("jwt_token")?.value);
+---
+
+<Layout title="Usuarios">
+    <main>
+        <div class="minicards-container">
+            <ul role="list" class="link-minicard-grid">
+                {users.map((user) => (
+                    <MemberCard 
+                        id={user.id}
+                        userType={user.userType}
+                        email={user.email}
+                        nickname={user.nickname}
+                        banned={user.banned}
+                    />
+                ))}
+            </ul>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>

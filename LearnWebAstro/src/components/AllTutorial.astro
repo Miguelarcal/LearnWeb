@@ -1,0 +1,494 @@
+---
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import '@styles/alltutorial.css';
+
+interface Props {
+    id: string;
+	edit: string;
+}
+
+const { id, edit } = Astro.props;
+---
+
+<div id="content">
+    <div data-tutorial={id} style="display: none" id="tutorial"></div>
+    <div data-edit={edit} style="display: none" id="edit"></div>
+    <p><input type="text" placeholder="Título..." id="tutorial-title-input"/></p>
+    <p><input type="text" placeholder="Descripción..." id="tutorial-description-input"/></p>
+    <button id="new-page">Nueva página</button>
+    <div class="pages-container">
+        <ul role="list" class="link-pages-grid" id="pages-ul">
+        </ul>
+    </div>
+    <button id="done-button">Listo</button>
+</div>
+<ArrowUp/>
+
+<script>
+    import { newTutorial, newPage, newBlock, getTutorialById, customDelete, updateTutorial, customEndpointJwt } from '@api/useCases';
+    import Swal from 'sweetalert2';
+    import { getDecodedToken, getToken } from '@utils/get_token';
+
+    const token = getToken();
+
+    // ID del curso obtenido mediante un dataset, puede ser null
+    let tutorial_id = document.getElementById("tutorial").dataset.tutorial;
+
+    // Variable que indica si estamos editando
+    let edit = (document.getElementById("edit").dataset.edit === 'true');
+
+    // Si existe id del tutorial obtenemos el tutorial completo
+    let tutorial = tutorial_id ? await getTutorialById(tutorial_id, token) : null;
+
+    // Si existe tutorial obtenemos su autor y si no damos por hecho que se está creando un tutorial, por lo que el usuario será el de la sesión actual
+    let author = tutorial ? await customEndpointJwt(tutorial.author, token) : await customEndpointJwt(`/api/users/${getDecodedToken()['id']}`, token);
+
+    // Obtenemos inputs
+    const title_input = document.getElementById("tutorial-title-input");
+    const description_input = document.getElementById("tutorial-description-input");
+
+    // Tutorial original, vacío por ahora (así quedará si no es edición)
+    let original_tut = null;
+
+    // Botón de página nueva
+    const newPageButton = document.getElementById("new-page");
+    // Contador de las páginas
+    let page_order_number_cont = 1;
+
+    // Lista de elementos que borraremos antes de guardar el tutorial editado
+    const delete_list = [];
+
+    // Botón de listo o terminado
+    const done = document.getElementById("done-button");
+    
+    /**
+     * Función que añade una página
+     * @param pag página que vamos a añadir (si estamos editando)
+     */
+    const ActNewPage = async (pag) => {
+        const pages_ul = document.getElementById("pages-ul");
+
+        // Empezamos a crear un elemento que será la página
+        const div_last_page = document.createElement("li");
+        div_last_page.classList.add("li-page");
+        div_last_page.id = `page-${page_order_number_cont}`;
+
+        // Inputs de título y descripción
+        const title_page = document.createElement("input");
+        title_page.setAttribute("type", "text");
+        title_page.setAttribute("placeholder", "Título...");
+        // Si estamos editando y existe la página añadimos los valores existentes
+        pag ? title_page.value = pag.title : null;
+        title_page.classList.add("input-page");
+        title_page.id = `page${page_order_number_cont}-title-input`;
+        div_last_page.appendChild(title_page);
+
+        const description_page = document.createElement("input");
+        description_page.setAttribute("type", "text");
+        description_page.setAttribute("placeholder", "Descripción...");
+        // Lo mismo que hemos hecho con el título
+        pag ? description_page.value = pag.description : null;
+        description_page.classList.add("input-page");
+        description_page.id = `page${page_order_number_cont}-description-input`;
+        div_last_page.appendChild(description_page);
+
+        // Aumentamos el contador de la página
+        page_order_number_cont++;
+
+        /**
+         * Función que añade un nuevo contenedor de bloques, esto es un div que contiene botones de añadir título, texto o código, y si lo hay, un bloque para rellenar o editar
+         * @param block bloque (título, texto o código) que vamos a añadir (si estamos editando)
+         */
+        const new_block_div_fun = (block) => {
+            // Creamos el bloque div que va a contener los botones de añadir nuevos elementos
+            const new_block_div = document.createElement("div");
+            new_block_div.classList.add("div-buttons");
+
+            // Botón de añadir h1
+            const new_h1_button = document.createElement("button");
+            new_h1_button.innerHTML = `add h1`;
+            new_h1_button.classList.add("new-button");
+            new_block_div.appendChild(new_h1_button);
+
+            // Botón de añadir texto
+            const new_text_button = document.createElement("button");
+            new_text_button.innerHTML = `add text`;
+            new_text_button.classList.add("new-button");
+            new_block_div.appendChild(new_text_button);
+
+            // Botón de añadir código
+            const new_code_button = document.createElement("button");
+            new_code_button.innerHTML = `add code`;
+            new_code_button.classList.add("new-button");
+            new_block_div.appendChild(new_code_button);
+
+            // EventListeners para los botones de añadir contenido
+            new_h1_button.addEventListener("click", () => {
+                new_title(new_block_div_fun, div_last_page, new_block_div, null, false)
+            });
+
+            new_text_button.addEventListener("click", () => {
+                new_text(new_block_div_fun, div_last_page, new_block_div, null, false);
+            });
+
+            new_code_button.addEventListener("click", () => {
+                new_code(new_block_div_fun, div_last_page, new_block_div, null, false);
+            });
+
+            // Si existe el bloque (estamos editando), dependiendo del tipo de bloque añade un título, texto o código
+            if (block) {
+                switch (block.type){
+                    case 'title':
+                        new_title(new_block_div_fun, div_last_page, new_block_div, block, true)
+                        break;
+                    case 'text':
+                        new_text(new_block_div_fun, div_last_page, new_block_div, block, true);
+                        break;
+                    case 'code':
+                        new_code(new_block_div_fun, div_last_page, new_block_div, block, true);
+                        break;
+                }
+            }
+            
+            return new_block_div;
+        }
+
+        // Añade un primer contendor de bloques
+        const new_block_div = new_block_div_fun(null);
+
+        // Si hay página recorre los bloques para crear los contenedores de bloques
+        if (pag) {
+            for (const block of pag.blocks) {
+                const blk = await customEndpointJwt(block, token);
+                new_block_div_fun(blk);
+            }
+        }
+
+        // Terminamos de rellenar la página
+        div_last_page.appendChild(new_block_div);
+        // Añadimos el elemento de la página al elemento de la lista de páginas
+        pages_ul.appendChild(div_last_page);
+    };
+
+    /**
+     * Función que añade los botones de listo, editar o borrar en un bloque
+     * @param parent_div contenedor padre
+     * @param form input para el bloque
+     * @param page elemento HTML de la página
+     * @param after_block es el contenedor de bloques que habrá después del actual, ya que siempre hay uno detrás
+     * @param type_block tipo de bloque, title, text o code
+     * @param display_divs si muestra o no inicialmente los botones de editar, borrar, etc
+     */
+    const add_buttons = (parent_div, form, page, after_block, type_block, display_divs) => {
+        // Botón de listo
+        const done_button = document.createElement("button");
+        done_button.innerHTML = `Listo`;
+        done_button.classList.add("new-button");
+        parent_div.appendChild(done_button);
+
+        // Determina el tipo de bloque
+        let type_element = "";
+        switch (type_block.split("type-")[1]) {
+            case 'title':
+                type_element = "h1";
+                break;
+            case 'text':
+                type_element = "pre";
+                break;
+            case 'code':
+                type_element = "code";
+                break;
+        }
+        // Crea el elemento apropiado según el tipo de bloque
+        const block = document.createElement(type_element);
+        block.classList.add("item-block");
+        block.classList.add(type_block);
+        block.classList.add("not-display");
+        parent_div.appendChild(block);
+
+        // Botón de editar
+        const edit_button = document.createElement("button");
+        edit_button.innerHTML = `Editar`;
+        edit_button.classList.add("new-button");
+        edit_button.classList.add("other-buttons");
+        edit_button.classList.add("not-display");
+        parent_div.appendChild(edit_button);
+
+        // Botón de borrar
+        const delete_button = document.createElement("button");
+        delete_button.innerHTML = `Borrar`;
+        delete_button.classList.add("new-button");
+        delete_button.classList.add("other-buttons");
+        delete_button.classList.add("not-display");
+        parent_div.appendChild(delete_button);
+
+        // EventListener para cuando se pulsa el botón de listo
+        done_button.addEventListener("click", () => {
+            done();
+        });
+
+        // Para cuando se pulsa editar, se muestran u ocultan ciertos botones
+        edit_button.addEventListener("click", () => {
+            block.innerText = form.value;
+            form.classList.remove("not-display");
+            done_button.classList.remove("not-display");
+            block.classList.add("not-display");
+            edit_button.classList.add("not-display");
+            delete_button.classList.add("not-display");
+        });
+
+        // Para cuando se pulsa borrar, se elimina el bloque por completo, y el contenedor de botones posterior a este
+        delete_button.addEventListener("click", () => {
+            page.removeChild(parent_div);
+            page.removeChild(after_block);
+        });
+
+        /**
+         * Función que oculta ciertos botones dejando solo el de editar y borrar
+         */
+        const done = () => {
+            block.innerHTML = form.value;
+            form.classList.add("not-display");
+            done_button.classList.add("not-display");
+            block.classList.remove("not-display");
+            edit_button.classList.remove("not-display");
+            delete_button.classList.remove("not-display");
+        };
+
+        // Si está en true automaticamente comienza como ya creado el bloque, listo para editar
+        display_divs ? done() : null;
+    }
+
+    /**
+     * Función que crea o edita un tutorial
+     * @param do_edit parmámetro que indica si se trata de una edición
+     */
+    const tutorial_done = async (do_edit) => {
+        // Borra ciertos elementos como bloques o páginas de la BBDD antes de introducir los nuevos
+        delete_list.map(async (elem) => {
+            switch(elem.type){
+                case 'block':
+                    await customDelete(`/api/blocks/${elem.id}`, token);
+                    break;
+                case 'page':
+                    await customDelete(`/api/pages/${elem.id}`, token);
+                    break;
+            }
+        });
+
+        // Datos que pasaremos al crear el tutorial
+        const tutorial_data = {
+            name: document.getElementById("tutorial-title-input")['value'],
+            description: document.getElementById("tutorial-description-input")['value'],
+            author: author['id'],
+            pages: []
+        };
+
+        // Si estamos editando actualiza el tutorial y devuelve el ID, si no lo crea y también devuelv el ID
+        let tutorial_new_id = do_edit ? await updateTutorial(tutorial_data, tutorial_id, token) : await newTutorial(tutorial_data, token);
+
+        // Obtenemos el elemento de la página
+        const pages = document.getElementsByClassName("li-page");
+        // Contador para el orden de las páginas
+        let pages_cont = 1;
+        // For según el número de páginas
+        for(let i=0;i<pages.length;i++){
+            // Datos que vamos a pasar al crear las páginas
+            let pages_tut = {
+                title: document.getElementById(`page${pages_cont}-title-input`)['value'],
+                description: document.getElementById(`page${pages_cont}-description-input`)['value'],
+                order_number: pages_cont,
+                tutorial: tutorial_new_id,
+                blocks: [],
+            }
+            // Creamos la página
+            const page_id = await newPage(pages_tut, token);
+            // Contenedor del bloque
+            const forms = pages.item(i).getElementsByClassName("div-forms");
+            // Contador para el orden de bloques
+            let blocks_cont = 1;
+            for(let k=0;k<forms.length;k++){
+                // Obtenemos el bloque
+                const block = forms.item(k).getElementsByClassName("item-block").item(0);
+                // Si tiene contenido
+                if(block!=null && block.textContent != ""){
+                    // Datos que vamos a pasar al crear el bloque
+                    let block_pag = {
+                        type: block.classList[1].split("type-")[1],
+                        content: block.textContent,
+                        order_number: blocks_cont,
+                        page: page_id,
+                    }
+                    // Añadimos al array de bloques
+                    pages_tut.blocks.push(block_pag);
+                    blocks_cont++;
+                    // Creamos el bloque
+                    const block_id = await newBlock(block_pag, token);
+                }
+            }
+            // Le añadimos un objeto page a tutorial.pages
+            tutorial_data.pages.push(pages_tut);
+            pages_cont++;
+        }
+        Swal.fire({
+            icon: 'success',
+            title: '¡Tutorial guardado!',
+            text: 'Redirigiendo...',
+            timer: 2000,
+            willClose: () => {
+                window.location.href = '/';  // Redirigir al index
+            }
+        });
+    }
+
+    /**
+     * Función para crear un bloque de título
+     * @param new_block_div_fun función de crear el contenedor de botones de bloques
+     * @param div_last_page div de la página
+     * @param new_block_div div del nuevo bloque
+     * @param block bloque si existe
+     * @param display_divs true si debe de mostrarse desde el principio, (es un bloque existente que se puede editar)
+     */
+    const new_title = (new_block_div_fun, div_last_page, new_block_div, block, display_divs) => {
+        // Contenedor que va a tener el input y los distintos botones
+        const form_div = document.createElement("div");
+        form_div.classList.add("div-forms");
+
+        // Input
+        const form = document.createElement("input");
+        form.setAttribute("type", "text");
+        form.setAttribute("placeholder", "Título...");
+        form.classList.add("input-block");
+        block ? form.value = block.content : null;
+        form_div.appendChild(form);
+
+        const new_block_div_after = new_block_div_fun();
+
+        add_buttons(form_div, form, div_last_page, new_block_div_after, "type-title", display_divs);
+
+        // Añadimos el input
+        div_last_page.insertBefore(form_div, new_block_div.nextSibling);
+        div_last_page.insertBefore(new_block_div_after, form_div.nextSibling);
+    }
+
+    /**
+     * Añade un bloque de texto
+     * @param new_block_div_fun 
+     * @param div_last_page 
+     * @param new_block_div 
+     * @param block 
+     * @param display_divs 
+     */
+    const new_text = (new_block_div_fun, div_last_page, new_block_div, block, display_divs) => {
+        // Contenedor que va a tener el input y los distintos botones
+        const form_div = document.createElement("div");
+        form_div.classList.add("div-forms");
+
+        // Input
+        const form = document.createElement("textarea");
+        form.setAttribute("placeholder", "Texto...");
+        form.setAttribute("width", "500px");
+        form.setAttribute("height", "500px");
+        form.setAttribute("cols", "60");
+        form.setAttribute("rows", "10");
+        form.setAttribute("wrap", "soft");
+        form.classList.add("input-block");
+        block ? form.value = block.content : null;
+        form_div.appendChild(form);
+
+        const new_block_div_after = new_block_div_fun();
+
+        add_buttons(form_div, form, div_last_page, new_block_div_after, "type-text", display_divs);
+
+        // Añadimos el input
+        div_last_page.insertBefore(form_div, new_block_div.nextSibling);
+        div_last_page.insertBefore(new_block_div_after, form_div.nextSibling);
+    }
+
+    /**
+     * Añadimos un bloque de código
+     * @param new_block_div_fun 
+     * @param div_last_page 
+     * @param new_block_div 
+     * @param block 
+     * @param display_divs 
+     */
+    const new_code = (new_block_div_fun, div_last_page, new_block_div, block, display_divs) => {
+        // Contenedor que va a tener el input y los distintos botones
+        const form_div = document.createElement("div");
+        form_div.classList.add("div-forms");
+
+        // Input
+        const form = document.createElement("textarea");
+        form.setAttribute("placeholder", "Código...");
+        form.setAttribute("width", "500px");
+        form.setAttribute("height", "500px");
+        form.setAttribute("cols", "60");
+        form.setAttribute("rows", "10");
+        form.setAttribute("wrap", "soft");
+        form.classList.add("input-block");
+        block ? form.value = block.content : null;
+        form_div.appendChild(form);
+
+        const new_block_div_after = new_block_div_fun();
+
+        add_buttons(form_div, form, div_last_page, new_block_div_after, "type-code", display_divs);
+
+        // Añadimos el input
+        div_last_page.insertBefore(form_div, new_block_div.nextSibling);
+        div_last_page.insertBefore(new_block_div_after, form_div.nextSibling);
+    }
+
+    // Si hay tutorial...
+    if(tutorial){
+        // Crea una copia, la original y la que editamos
+        original_tut = tutorial;
+        description_input.setAttribute("value", tutorial.description);
+        title_input.setAttribute("value", tutorial.name);
+        // Cargamos las páginas
+        for (const pag of tutorial.pages) {
+            const page = await customEndpointJwt(pag, token);
+            if (page) {
+                await ActNewPage(page);
+            }
+        }
+    }
+
+    // Rellena la lista de borrar
+    original_tut ? original_tut.pages.map(async (pag) => {
+        delete_list.unshift({type: 'page', id: pag.split("/")[3]});
+        const page = await customEndpointJwt(pag, token);
+        page.blocks.map(async (blk) => {
+            delete_list.unshift({type: 'block', id: blk.split("/")[3]});
+        });
+    }) : null;
+
+    // EventListener para cuando pulso el botón de añadir nueva página
+    newPageButton.addEventListener("click", () => ActNewPage(null));
+
+    // EventListener para cuando he terminado de hacer el tutorial
+    done.addEventListener("click", () => {
+        if(title_input['value'] != "" && description_input['value'] != ""){
+            Swal.fire({
+                title: '¿Seguro?',
+                text: '¿Estás seguro de querer guardar este tutorial?',
+                showDenyButton: true,
+                confirmButtonText: 'Si',
+                denyButtonText: 'No',
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    tutorial_done(edit);
+                } else {
+                    Swal.fire('Tutorial no guardado');
+                }
+            });
+        } else {
+            Swal.fire({
+                title: 'Introduce un título y una descripción por lo menos',
+            })
+        }
+    });
+
+</script>
+

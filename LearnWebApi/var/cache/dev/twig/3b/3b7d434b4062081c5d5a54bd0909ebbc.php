@@ -371,6 +371,6 @@ class __TwigTemplate_ce7e31a0f1e42ecf062f97e94dc254c0 extends Template
 {% endblock body_javascript %}
 </body>
 </html>
-", "@ApiPlatform/GraphQlPlayground/index.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/GraphQlPlayground/index.html.twig");
+", "@ApiPlatform/GraphQlPlayground/index.html.twig", "/var/www/symfony/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/GraphQlPlayground/index.html.twig");
     }
 }

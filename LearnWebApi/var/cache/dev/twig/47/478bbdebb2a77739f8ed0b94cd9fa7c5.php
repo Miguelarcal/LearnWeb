@@ -492,6 +492,6 @@ class __TwigTemplate_7cf1e5aeb09a7283f0da959e9fc1b16c extends Template
 
 </body>
 </html>
-", "@ApiPlatform/SwaggerUi/index.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/SwaggerUi/index.html.twig");
+", "@ApiPlatform/SwaggerUi/index.html.twig", "/var/www/symfony/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/SwaggerUi/index.html.twig");
     }
 }

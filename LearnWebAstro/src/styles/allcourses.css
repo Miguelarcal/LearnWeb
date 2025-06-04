@@ -1,0 +1,176 @@
+.course-editor-container {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.course-input {
+  width: 90%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.course-title-input {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.course-select {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  background-color: white;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Ctitle%3Edown-arrow%3C%2Ftitle%3E%3Cg%20fill%3D%22%23000000%22%3E%3Cpath%20d%3D%22M10.293%2C3.293%2C6%2C7.586%2C1.707%2C3.293A1%2C1%2C0%2C0%2C0%2C.293%2C4.707l5%2C5a1%2C1%2C0%2C0%2C0%2C1.414%2C0l5-5a1%2C1%2C0%2C1%2C0-1.414-1.414Z%22%20fill%3D%22%23000000%22%3E%3C%2Fpath%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+}
+
+.course-input:focus,
+.course-select:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 1.5rem 0 1rem;
+}
+
+.tutorials-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  width: 100%;
+  margin: 1rem 0 2.5rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.tutorial-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  list-style: none;
+  padding: 1.5rem;
+  width: 25%;
+  position: relative;
+}
+
+.tutorial-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.tutorial-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tutorial-title {
+  font-size: 1.3rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.tutorial-description {
+  font-size: 1rem;
+  color: #555;
+  margin: 0 0 1rem;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #4caf50;
+  color: white;
+  margin: 1rem 0 2rem;
+}
+
+.btn-primary:hover {
+  background-color: #3d8b40;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tutorial-actions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.tutorial-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+  text-align: center;
+}
+
+.tutorial-btn-add {
+  background-color: #4caf50;
+  color: white;
+}
+
+.tutorial-btn-remove {
+  background-color: #f44336;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .course-editor-container {
+    padding: 0 1rem;
+    margin: 1.5rem auto;
+  }
+
+  .tutorial-card {
+    width: 100%;
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-input {
+    padding: 0.8rem;
+  }
+
+  .tutorial-actions {
+    flex-direction: column;
+  }
+}

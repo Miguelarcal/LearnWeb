@@ -1,0 +1,18 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import AllTutorial from '@components/AllTutorial.astro';
+---
+
+<Layout title="Nuevo tutorial">
+    <main>
+        <!-- Llamamos al componente AllTutorial que es básicamente el creador / editor de tutoriales y no le pasamos id ni edit para que sea crear tutorial -->
+        <AllTutorial 
+            id={null}
+            edit={null}
+        />
+    </main>
+     <ArrowUp />
+</Layout>
+

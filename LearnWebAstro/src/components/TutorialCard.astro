@@ -1,0 +1,59 @@
+---
+import { averageTutorialScore, customEndpointJwt } from '@api/useCases';
+import { formatISODateAuto } from '@utils/formatDate';
+import { formatFloat } from '@utils/formatFloat';
+
+interface Props {
+	id: Number; // ID del tutorial
+	name: string; // Nombre del tutorial
+	description: string; // Descripción
+	rating: string; // Puntuación media
+	ratingCount: string; // Cantidad de puntuaciones
+	author: string; // Autor del tutorial
+	add_date: string; // Fecha de creación
+	mod_date: string; // Fecha de modificación
+	hidden: Number; // Oculto o no	
+	user_role: string; // Rol del usuario ROLE_LEARNER o ROLE_ADMIN 
+	user_id: string; // ID del usuario
+}
+
+const { id, name, description, rating, ratingCount, author, add_date, mod_date, hidden, user_role, user_id } = Astro.props;
+
+const base_path = import.meta.env.BASE_URL;
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+const nick_author = await customEndpointJwt(author, token);
+
+// Obtiene la puntuación media mediante una función que llama a la API si esta no se proporciona en los props
+const nPuntuation = (parseInt(ratingCount) > 0) ? ({'average_score': rating, 'score_count': ratingCount}) : await averageTutorialScore(id, token);
+---
+<li class="minicard">
+	<article class="minicard-content">
+		<header class="minicard-header">
+			<h3>{name}</h3>
+			<p class="minicard-description">{description}</p>
+		</header>
+		<footer class="minicard-footer">
+			<div class="minicard-rating">
+				<!-- Le damos el formato que queremos al average_score con formatFloat -->
+				<span class="minicard-rating-value">{(nPuntuation['score_count'] > 0) ? formatFloat(nPuntuation['average_score']) : <></>}</span>
+				<span class="minicard-rating-count">{(nPuntuation['score_count'] > 0) ? nPuntuation['score_count'] : <></>} </span>
+			</div>
+
+			<div class="minicard-meta">
+				<span class="minicard-author">Por {nick_author['nickname']}</span>
+				<div class="minicard-dates">
+					<!-- Le damos formato a las fechas -->
+					<span>Creado: {formatISODateAuto(add_date)}</span>
+					{(formatISODateAuto(add_date) != formatISODateAuto(mod_date)) ? <span>Editado {formatISODateAuto(mod_date)}</span> : <></>}</span>
+				</div>
+			</div>
+		</footer>
+		<div class="buttons">
+			{(user_role == "ROLE_ADMIN" || author == `/api/users/${user_id}`) ? <><a href={`${base_path}/hide-tutorial?id=${id}`} class="action-button" id="show">{hidden == 0 ? <>Ocultar</> : <>Mostrar</>}</a></> : null}
+			{(user_role == "ROLE_ADMIN" || author == `/api/users/${user_id}`) ? <><a href={`${base_path}/edit-tutorial?id=${id}`} class="action-button" id="edit">Editar</a></> : null}
+			<a href=`${base_path}/see-tutorial?id=${id}` class="action-button">Ver</a>
+		</div>
+	</article>
+</li>

@@ -1,0 +1,201 @@
+---
+const base_path = import.meta.env.BASE_URL;
+---
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnWeb - Iniciar sesión</title>
+</head>
+<form id="loginForm">
+  <div class="logo-container">
+    <img src="/public/LearnWebLogoB.png" alt="LearnWeb Logo" class="logo" />
+    <h1>Inicia sesión en LearnWeb</h1>
+  </div>
+  <label>
+    Nombre de usuario:
+    <input type="text" name="nickname" required id="nickname"/>
+  </label>
+  <label>
+    Contraseña:
+    <input type="password" name="passwd" required id="passwd"/>
+  </label>
+  <button id="send">Iniciar sesión</button>
+  <p>¿No tienes una cuenta?, en ese caso, <a href="/register">regístrate</a></p>
+</form>
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f3f3f3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    form {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch; /* Asegura que los inputs y botones tengan el mismo ancho */
+    }
+    .form-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-bottom: 20px;
+    }
+
+    .logo {
+        width: 50%;
+        height: auto;
+        margin-bottom: 15px;
+    }
+
+    h2 {
+        font-size: 24px;
+        color: #333;
+        font-weight: bold;
+    }
+    form label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        width: 100%;
+        text-align: left;
+    }
+
+    form input {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f7f7f7;
+        font-size: 16px;
+        color: #333;
+        box-sizing: border-box;
+    }
+
+    form input:focus {
+        outline: none;
+        border-color: #4CAF50;
+        background-color: #e8f5e9;
+    }
+    form button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: white;
+        color: #4CAF50;
+        border: 2px solid #4CAF50;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    form button:hover {
+        background-color: #45a049;
+        color: white;
+        transform: scale(1.05);
+    }
+    form p {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    form p a {
+        color: #4CAF50;
+        text-decoration: none;
+    }
+
+    form p a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        form {
+            padding: 20px;
+            max-width: 350px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        form input {
+            padding: 10px;
+        }
+
+        form button {
+            padding: 10px;
+        }
+    }
+
+</style>
+
+<script>
+  import Swal from "sweetalert2";
+  import { getUserByLogin } from '@api/useCases';
+
+  // Al darle a iniciar sesión
+  document.getElementById("loginForm").addEventListener("submit", async function (e){
+    e.preventDefault();
+    // Obtiene los valores de los campos
+    const nickname = document.getElementById("nickname")['value'];
+    const password = document.getElementById("passwd")['value'];
+    // Variable para manejar errores
+    let errors = false;
+    // Comprobaciones de tipo de datos y mínimo de longitud
+    if (typeof nickname !== "string" || nickname.length < 1) {
+      Swal.fire("Please enter your nickname. ");
+      errors = true;
+    }
+    if (typeof password !== "string" || password.length < 1) {
+      Swal.fire("Please enter your password. ");
+      errors = true;
+    }
+    if(!errors) {
+      // Lógica si no hay errores
+      // Intentamos obtener un usuario con los datos del formulario
+      const user = await getUserByLogin(nickname, password);
+      // Si existe
+      if (user != null) {
+        // Obtiene su token que nos ha proporcionado la API
+        const token = (user)['token'];
+        // Fecha de creación del token
+        const d = new Date();
+        d.setTime(d.getTime() + (7200*1000));
+        // Guardamos el token en las cookies bajo el nombre de jwt_token, con vistas a expirar en 1 hora
+        document.cookie = `jwt_token=${token}; max-age=3600; path=/;`;
+        // También podríamos guardarlo en localStorage si le diéramos uso
+        // localStorage.setItem("jwt_token", token);
+        Swal.fire({
+            icon: 'success',
+            title: '¡Login exitoso!',
+            text: 'Redirigiendo...',
+            timer: 2000,
+            willClose: () => {
+                window.location.href = '/';  // Redirigir al index tras 2 segundos
+            }
+        });
+      } else {
+        // Aviso por sweetalert2 de contraseña incorrecta
+        Swal.fire({
+          title: 'Usuario o contraseña incorrecta'
+        });
+      }
+    }
+  })
+</script>

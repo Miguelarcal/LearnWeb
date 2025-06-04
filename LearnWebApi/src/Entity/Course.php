@@ -5,10 +5,52 @@ namespace App\Entity;
 use App\Repository\CourseRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Controller\ApiController;
 
-#[ApiResource]
+#[ApiResource(
+    description: 'App courses',
+    operations: [
+        new Get(),
+        new Get(
+            name: 'get avaidable courses',
+            routeName: 'app_courses_avaidable'
+        ),
+        new Get(
+            name: 'get my courses',
+            routeName: 'app_course_mine'
+        ),
+        new Get(
+            name: 'get my courses filtered',
+            routeName: 'app_courses_filter'
+        ),
+        new Post(
+            name: 'new course v2',
+            routeName: 'app_course_new_v2'
+        ),
+        new GetCollection(),
+        new Post(),
+        new Put(),
+        new Put(
+            name: 'get update course',
+            routeName: 'app_course_update'
+        ),
+        new Put(
+            name: 'update hidden course',
+            routeName: 'app_course_update_hidden'
+        ),
+        new Patch(),
+        new Delete(),
+    ]
+)]
 #[ORM\Entity(repositoryClass: CourseRepository::class)]
 class Course
 {
@@ -26,18 +68,6 @@ class Course
     #[ORM\Column(length: 60)]
     private ?string $difficulty = null;
 
-    /**
-     * @var Collection<int, Language>
-     */
-    #[ORM\ManyToMany(targetEntity: Language::class, inversedBy: 'courses')]
-    private Collection $languages;
-
-    /**
-     * @var Collection<int, Label>
-     */
-    #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'courses')]
-    private Collection $labels;
-
     #[ORM\ManyToOne(inversedBy: 'created_courses')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $author = null;
@@ -54,12 +84,26 @@ class Course
     #[ORM\OneToMany(targetEntity: TutorialInCourse::class, mappedBy: 'course')]
     private Collection $tutorials;
 
+    #[ORM\Column]
+    private ?bool $hidden = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $addDate = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $modDate = null;
+
+    /**
+     * @var Collection<int, CourseScore>
+     */
+    #[ORM\OneToMany(targetEntity: CourseScore::class, mappedBy: 'course')]
+    private Collection $scores;
+
     public function __construct()
     {
-        $this->languages = new ArrayCollection();
-        $this->labels = new ArrayCollection();
         $this->students = new ArrayCollection();
         $this->tutorials = new ArrayCollection();
+        $this->scores = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -99,54 +143,6 @@ class Course
     public function setDifficulty(string $difficulty): static
     {
         $this->difficulty = $difficulty;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Language>
-     */
-    public function getLanguages(): Collection
-    {
-        return $this->languages;
-    }
-
-    public function addLanguage(Language $language): static
-    {
-        if (!$this->languages->contains($language)) {
-            $this->languages->add($language);
-        }
-
-        return $this;
-    }
-
-    public function removeLanguage(Language $language): static
-    {
-        $this->languages->removeElement($language);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Label>
-     */
-    public function getLabels(): Collection
-    {
-        return $this->labels;
-    }
-
-    public function addLabel(Label $label): static
-    {
-        if (!$this->labels->contains($label)) {
-            $this->labels->add($label);
-        }
-
-        return $this;
-    }
-
-    public function removeLabel(Label $label): static
-    {
-        $this->labels->removeElement($label);
 
         return $this;
     }
@@ -214,6 +210,72 @@ class Course
             // set the owning side to null (unless already changed)
             if ($tutorial->getCourse() === $this) {
                 $tutorial->setCourse(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isHidden(): ?bool
+    {
+        return $this->hidden;
+    }
+
+    public function setHidden(bool $hidden): static
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
+    public function getAddDate(): ?\DateTimeInterface
+    {
+        return $this->addDate;
+    }
+
+    public function setAddDate(\DateTimeInterface $addDate): static
+    {
+        $this->addDate = $addDate;
+
+        return $this;
+    }
+
+    public function getModDate(): ?\DateTimeInterface
+    {
+        return $this->modDate;
+    }
+
+    public function setModDate(\DateTimeInterface $modDate): static
+    {
+        $this->modDate = $modDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CourseScore>
+     */
+    public function getScores(): Collection
+    {
+        return $this->scores;
+    }
+
+    public function addScore(CourseScore $score): static
+    {
+        if (!$this->scores->contains($score)) {
+            $this->scores->add($score);
+            $score->setCourse($this);
+        }
+
+        return $this;
+    }
+
+    public function removeScore(CourseScore $score): static
+    {
+        if ($this->scores->removeElement($score)) {
+            // set the owning side to null (unless already changed)
+            if ($score->getCourse() === $this) {
+                $score->setCourse(null);
             }
         }
 

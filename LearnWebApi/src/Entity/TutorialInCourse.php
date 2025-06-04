@@ -5,8 +5,33 @@ namespace App\Entity;
 use App\Repository\TutorialInCourseRepository;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Controller\ApiController;
 
-#[ApiResource]
+#[ApiResource(
+    description: 'App tutorials in courses',
+    operations: [
+        new Get(),
+        new Get(
+            name: 'get tutorials from course',
+            routeName: 'app_tutorials_from_course'
+        ),
+        new Post(
+            name: 'new tutorial in course v2',
+            routeName: 'app_tutorial_in_course_new_v2'
+        ),
+        new GetCollection(),
+        new Post(),
+        new Put(),
+        new Patch(),
+        new Delete(),
+    ]
+)]
 #[ORM\Entity(repositoryClass: TutorialInCourseRepository::class)]
 class TutorialInCourse
 {

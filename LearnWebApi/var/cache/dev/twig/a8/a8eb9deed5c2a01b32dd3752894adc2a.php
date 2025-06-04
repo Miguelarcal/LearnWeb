@@ -2230,6 +2230,6 @@ $context["attrvalue"] === false)) {
         {%- endif -%}
     {%- endfor -%}
 {%- endblock attributes -%}
-", "form_div_layout.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/vendor/symfony/twig-bridge/Resources/views/Form/form_div_layout.html.twig");
+", "form_div_layout.html.twig", "/var/www/symfony/vendor/symfony/twig-bridge/Resources/views/Form/form_div_layout.html.twig");
     }
 }

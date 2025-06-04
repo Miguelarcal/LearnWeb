@@ -166,6 +166,6 @@ class __TwigTemplate_c8b5697799bee82b796db36547c606e4 extends Template
         {% block body %}{% endblock %}
     </body>
 </html>
-", "base.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/base.html.twig");
+", "base.html.twig", "/var/www/symfony/templates/base.html.twig");
     }
 }

@@ -1,0 +1,27 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import { changeBanUser } from '@api/useCases';
+import { jwtDecode } from "jwt-decode";
+
+const base_path = import.meta.env.BASE_URL;
+
+// Buscamos el id del usuario a banear en los parámetros de la URL
+const id = Astro.url.searchParams.get('id');
+
+const user_token = Astro.cookies.get("jwt_token") ? Astro.cookies.get("jwt_token").value : null;
+
+const user_token_data = jwtDecode(user_token);
+
+// Redirect si no es administrador el usuario de esta sesión o cambia el estado de baneo del usuario si lo es
+if (user_token_data['role'] != 'ROLE_ADMIN') {
+    return Astro.redirect(`${base_path}/`);
+} else {
+    await changeBanUser(id, user_token);
+    return Astro.redirect(`${base_path}/admin-users`);
+}
+---
+
+<Layout title="Banear/desbanear usuarios">
+    Banear/desbanear usuario con id: {id}
+</Layout>

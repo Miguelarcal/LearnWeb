@@ -1,0 +1,33 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import AllTutorial from '@components/AllTutorial.astro';
+import { getTutorialById } from '@api/useCases';
+import { jwtDecode } from "jwt-decode";
+
+const base_path = import.meta.env.BASE_URL;
+const id = Astro.url.searchParams.get('id');
+
+const user_token = Astro.cookies.get("jwt_token") ? Astro.cookies.get("jwt_token").value : null;
+
+const user_token_data = jwtDecode(user_token);
+
+const tutorial = await getTutorialById(id, user_token);
+
+// Si es usuario de esta sesión no es ni administrador ni el autor de este tutorial lo redirige a tutoriales
+if (user_token_data['role'] != 'ROLE_ADMIN' && tutorial.author != `/api/users/${user_token_data['id']}`) {
+    return Astro.redirect(`${base_path}/tutorials`);
+}
+---
+
+<Layout title="Editar tutorial">
+    <main>
+        <!-- Llamamos al componente AllTutorial y le pasamos el id del tutorial y edit true para que sepa que estamos editando dicho tutorial -->
+        <AllTutorial 
+            id={id}
+            edit={`true`}
+        />
+    </main>
+    <ArrowUp />
+</Layout>

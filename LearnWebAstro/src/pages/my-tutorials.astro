@@ -1,0 +1,42 @@
+---
+import Layout from '@layouts/Layout.astro';
+import TutorialCard from '@components/TutorialCard.astro';
+import { getMyTutorials } from '@api/useCases';
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import { jwtDecode } from "jwt-decode";
+
+const user_token = Astro.cookies.get("jwt_token") ? Astro.cookies.get("jwt_token").value : null;
+
+const user_token_data = jwtDecode(user_token);
+
+// Obtiene los tutoriales del usuario de esta sesión
+const tutorials = await getMyTutorials(user_token_data['id'], user_token);
+---
+
+<Layout title="Mis tutoriales">
+    <main>
+        <h1>Estos son tus tutoriales {user_token_data['nickname']}</h1>
+        <div class="minicards-container">
+            <ul role="list" class="link-minicard-grid">
+                <!-- Mapeamos los tutoriales y los mostramos en "cartas" -->
+                {tutorials.map((tutorial) => (
+                    <TutorialCard 
+                        id={tutorial.id}
+                        name={tutorial.name}
+                        description={tutorial.description}
+                        rating="ni"
+                        ratingCount='ni'
+                        author={tutorial.author}
+                        hidden={tutorial.hidden}
+                        user_role={'NO_ROLE'}
+                        user_id={user_token_data['id']}
+                        add_date={tutorial.addDate}
+                        mod_date={tutorial.modDate}
+                    />
+                ))}
+            </ul>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>

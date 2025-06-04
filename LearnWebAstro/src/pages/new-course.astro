@@ -1,0 +1,15 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import '@styles/allcourses.css';
+import AllCourse from '@components/AllCourse.astro';
+---
+
+<Layout title="Nuevo curso">
+    <main class="course-editor-container">
+        <!-- Llamamos al componente AllCourse que es básicamente el creador / editor de cursos y no le pasamos id para que sea crear curso -->
+        <AllCourse 
+            id={null}
+        />
+    </main>
+</Layout>

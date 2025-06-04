@@ -1,0 +1,74 @@
+---
+import uparrow from '@public/arriba.png'
+---
+<div class="arrow-div"><img src={uparrow.src} width="48" alt="Volver arriba"></div>
+
+<script>
+    const arrow = document.querySelector(".arrow-div");
+
+    /**
+     * Función que muestra la flecha para volver arriba si cumple con ciertas condiciones
+     */
+    function changeCss () {
+        // Si has bajado 800 px o más muestra la flecha
+        if (this.scrollY >= 800){
+            arrow.classList.add("show");
+            arrow.classList.remove("hide");
+            arrow.classList.remove("off-screen");
+        } else {
+            // Se oculta la flecha al subir a entre 400 y 800 px del top
+            if (this.scrollY >= 400) {
+                    arrow.classList.add("off-screen");
+                    arrow.classList.remove("show");
+                    setTimeout(() => {
+                        arrow.classList.add("hide");
+                    }, 500);      
+            } else {
+                arrow.classList.add("hide");
+                arrow.classList.remove("show");
+            }
+        }
+    }
+    // EventListener a cuando se sube o baja en la página
+    window.addEventListener("scroll", changeCss , false);
+    // Si se pincha sobre la flecha se sube hasta arriba del todo con una animación
+    arrow.addEventListener("click", function () {
+        window.scrollTo({top:0, left:0, behavior:'smooth'})
+    });
+</script>
+
+<style>
+    .arrow-div {
+        position: fixed;
+        background-color: rgb(211, 211, 211);
+        border-radius: 100%;
+        bottom: 16px;
+        right: 16px;
+        opacity: 0.6;
+        visibility: hidden;
+        width: 3rem;
+        height: 3rem;
+        z-index: 1;
+        transition: background-color 0.5s;
+        cursor: pointer;
+    }
+
+    .off-screen {
+        visibility: visible;
+        animation: bounceOutDown; /* Animación al desaparecer */
+        animation-duration: 0.5s;
+    }
+    .hide {
+        visibility: hidden;
+    }
+
+    .show {
+        visibility: visible;
+        animation: bounceInUp; /* Animación al aparecer */
+        animation-duration: 1s;
+    }
+
+    .arrow-div:is(:hover, :focus-within) {
+		background-color:rgb(112, 162, 218);
+	}
+</style>

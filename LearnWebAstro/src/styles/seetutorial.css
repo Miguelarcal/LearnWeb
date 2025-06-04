@@ -1,0 +1,251 @@
+.tutorial-viewer {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.6;
+}
+
+.tutorial-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  line-height: 1.2;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.tutorial-description {
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 0 auto 2.5rem;
+  color: #555;
+  max-width: 800px;
+  padding: 0 1rem;
+}
+
+.tutorial-meta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.tutorial-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tutorial-meta-item i {
+  color: #4caf50;
+}
+
+.pages-container {
+  margin-top: 2rem;
+  padding: 0;
+  padding: 2rem;
+  border-radius: 1rem;
+}
+
+.link-pages-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.li-page {
+  background-color: #eee;
+  border-radius: 1rem;
+  box-shadow: none;
+  padding: 2rem;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 2rem;
+}
+
+.page-header {
+  padding: 0 0 1rem 0;
+  background-color: transparent;
+  border-bottom: none;
+}
+
+.input-page-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.input-page-description {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0.5rem 0 0;
+}
+
+.page-content {
+  padding: 1rem 0 0 0;
+}
+
+.div-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.item-block {
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.type-title {
+  background-color: transparent;
+  border-left: none;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 0.5rem 0;
+  margin: 1.5rem 0 1rem 0;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.type-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin: 1rem 0;
+}
+
+.type-code {
+  width: auto;
+  padding: 1.5rem;
+  border-radius: 8px;
+  line-height: 1.6;
+  background-color: #282c34;
+  color: #abb2bf;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95rem;
+  white-space: pre;
+  overflow-x: auto;
+  border-left: 4px solid #e06c75;
+  margin: 1.5rem 0;
+}
+
+.rating-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 2.5rem 0;
+}
+
+.rating-container {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  width: auto;
+}
+
+.rating-select {
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #ddd;
+  font-size: 0.95rem;
+  background-color: white;
+  min-width: 180px;
+  height: 38px;
+}
+
+.rating-button {
+  padding: 0.5rem 1.2rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  height: 38px;
+  box-sizing: border-box;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.rating-button:hover {
+  background-color: #3d8b40;
+}
+
+@media (max-width: 768px) {
+  .tutorial-title {
+    font-size: 2rem;
+  }
+
+  .tutorial-description {
+    font-size: 1.1rem;
+  }
+
+  .link-pages-grid {
+    gap: 2rem;
+  }
+
+  .input-page-title {
+    font-size: 1.6rem;
+  }
+
+  .type-title {
+    font-size: 1.4rem;
+  }
+
+  .rating-container {
+    flex-direction: row;
+    padding: 0.8rem 1.2rem;
+  }
+
+  .pages-container {
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .tutorial-title {
+    font-size: 1.8rem;
+  }
+
+  .tutorial-viewer {
+    padding: 1.5rem 1rem;
+  }
+
+  .link-pages-grid {
+    gap: 1.5rem;
+  }
+
+  .li-page {
+    padding-bottom: 1.5rem;
+    padding: 1rem;
+  }
+
+  .rating-container {
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .rating-select,
+  .rating-button {
+    width: auto;
+  }
+}

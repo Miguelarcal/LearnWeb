@@ -5,10 +5,60 @@ namespace App\Entity;
 use App\Repository\TutorialRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Controller\ApiController;
 
-#[ApiResource]
+#[ApiResource(
+    description: 'App tutorials',
+    operations: [
+        new Get(),
+        new Get(
+            name: 'get avaidable tutorials',
+            routeName: 'app_tutorials_avaidable'
+        ),
+        new Get(
+            name: 'get my tutorials',
+            routeName: 'app_tutorial_mine'
+        ),
+        new Get(
+            name: 'get all tutorials',
+            routeName: 'app_tutorial_all'
+        ),
+        new Get(
+            name: 'get tutorials filtered by title or description',
+            routeName: 'app_tutorials_filtered_avaidable'
+        ),
+        new Get(
+            name: 'get tutorials filtered by several fields',
+            routeName: 'app_tutorials_filter'
+        ),
+        new Post(
+            name: 'new tutorial v2',
+            routeName: 'app_tutorial_new_v2'
+        ),
+        new GetCollection(),
+        new Post(),
+        new Put(),
+        new Put(
+            name: 'update tutorial v2',
+            routeName: 'app_tutorial_update'
+        ),
+        new Put(
+            name: 'update hidden tutorial',
+            routeName: 'app_tutorial_update_hidden'
+        ),
+        new Patch(),
+        new Delete(),
+    ]
+)]
 #[ORM\Entity(repositoryClass: TutorialRepository::class)]
 class Tutorial
 {
@@ -35,24 +85,30 @@ class Tutorial
     #[ORM\OneToMany(targetEntity: Page::class, mappedBy: 'tutorial')]
     private Collection $pages;
 
-    /**
-     * @var Collection<int, Language>
-     */
-    #[ORM\ManyToMany(targetEntity: Language::class, inversedBy: 'tutorials')]
-    private Collection $languages;
+    #[ORM\ManyToOne(inversedBy: 'tutorials')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $author = null;
+
+    #[ORM\Column]
+    private ?bool $hidden = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $addDate = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $modDate = null;
 
     /**
-     * @var Collection<int, Label>
+     * @var Collection<int, TutorialScore>
      */
-    #[ORM\ManyToMany(targetEntity: Label::class, inversedBy: 'tutorials')]
-    private Collection $labels;
+    #[ORM\OneToMany(targetEntity: TutorialScore::class, mappedBy: 'tutorial')]
+    private Collection $scores;
 
     public function __construct()
     {
         $this->tutorialInCourses = new ArrayCollection();
         $this->pages = new ArrayCollection();
-        $this->languages = new ArrayCollection();
-        $this->labels = new ArrayCollection();
+        $this->scores = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -144,50 +200,80 @@ class Tutorial
         return $this;
     }
 
-    /**
-     * @return Collection<int, Language>
-     */
-    public function getLanguages(): Collection
+    public function getAuthor(): ?User
     {
-        return $this->languages;
+        return $this->author;
     }
 
-    public function addLanguage(Language $language): static
+    public function setAuthor(?User $author): static
     {
-        if (!$this->languages->contains($language)) {
-            $this->languages->add($language);
+        $this->author = $author;
+
+        return $this;
+    }
+
+    public function isHidden(): ?bool
+    {
+        return $this->hidden;
+    }
+
+    public function setHidden(bool $hidden): static
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
+    public function getAddDate(): ?\DateTimeInterface
+    {
+        return $this->addDate;
+    }
+
+    public function setAddDate(\DateTimeInterface $addDate): static
+    {
+        $this->addDate = $addDate;
+
+        return $this;
+    }
+
+    public function getModDate(): ?\DateTimeInterface
+    {
+        return $this->modDate;
+    }
+
+    public function setModDate(\DateTimeInterface $modDate): static
+    {
+        $this->modDate = $modDate;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TutorialScore>
+     */
+    public function getScores(): Collection
+    {
+        return $this->scores;
+    }
+
+    public function addScore(TutorialScore $score): static
+    {
+        if (!$this->scores->contains($score)) {
+            $this->scores->add($score);
+            $score->setTutorial($this);
         }
 
         return $this;
     }
 
-    public function removeLanguage(Language $language): static
+    public function removeScore(TutorialScore $score): static
     {
-        $this->languages->removeElement($language);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Label>
-     */
-    public function getLabels(): Collection
-    {
-        return $this->labels;
-    }
-
-    public function addLabel(Label $label): static
-    {
-        if (!$this->labels->contains($label)) {
-            $this->labels->add($label);
+        if ($this->scores->removeElement($score)) {
+            // set the owning side to null (unless already changed)
+            if ($score->getTutorial() === $this) {
+                $score->setTutorial(null);
+            }
         }
-
-        return $this;
-    }
-
-    public function removeLabel(Label $label): static
-    {
-        $this->labels->removeElement($label);
 
         return $this;
     }

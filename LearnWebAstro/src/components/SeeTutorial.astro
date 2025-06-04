@@ -1,0 +1,203 @@
+---
+import '@styles/seetutorial.css';
+import { getTutorialById, averageTutorialScore, customEndpointJwt, checkUserBan } from '@api/useCases';
+import { formatISODateAuto } from '@utils/formatDate';
+import { formatFloat } from '@utils/formatFloat';
+import { decodeToken } from '@utils/get_token';
+
+interface Props {
+    id: string;
+    show_details: string;
+}
+
+const { id, show_details } = Astro.props;
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+// Cargar datos del tutorial
+const tutorial = await getTutorialById(id, token);
+
+// Obtener las páginas del tutorial
+const pages = await Promise.all(
+    tutorial.pages.map(async (pageUrl) => {
+        const page = await customEndpointJwt(pageUrl, token);
+        // Obtener los bloques de cada página
+        page.blocks = await Promise.all(
+            page.blocks.map(async (blockUrl) => {
+                return await customEndpointJwt(blockUrl, token);
+            })
+        );
+        return page;
+    })
+);
+
+const autor = await customEndpointJwt(tutorial.author, token);
+
+const avg_scr = await averageTutorialScore(id, token);
+
+const user_id = decodeToken(token)['id'];
+
+const user_banned = await checkUserBan(user_id, token);
+---
+
+<div class="tutorial-viewer">
+    <h1 id={`tutorial-title-input-${id}`} class="tutorial-title">{tutorial ? tutorial.name : 'Cargando...'}</h1>
+    <p id={`tutorial-description-input-${id}`} class="tutorial-description">{tutorial ? tutorial.description : 'Cargando...'}</p>
+    {(show_details != "no") && (
+        <div class="tutorial-meta">
+            <span class="tutorial-meta-item">
+                <i>📅</i> Creado: {formatISODateAuto(tutorial.addDate)}
+            </span>
+            {(formatISODateAuto(tutorial.addDate) !== formatISODateAuto(tutorial.modDate)) ? <span class="tutorial-meta-item">
+                <i>✏️</i> Modificado: {formatISODateAuto(tutorial.modDate)}
+            </span> : <></>}
+            <span class="tutorial-meta-item">
+                <i>👤</i> {autor['nickname']}
+            </span>
+            <span class="tutorial-meta-item">
+                <i>⭐</i> {(avg_scr['score_count'] > 0) ? (
+                    <>{formatFloat(avg_scr['average_score'])}★ ({avg_scr['score_count']} valoraciones)</>
+                ) : (
+                    <>Sin valoraciones aún</>
+                )}
+            </span>
+        </div>
+    )}
+    <div data-tutorial={id} style="display: none" id="tutorial-id"></div>
+    <div data-details={show_details} style="display: none" id="details-id"></div>
+    {(((user_id != autor['id']) && (show_details != "no")) && user_banned == false) ? <div class="rating-container" id={`rating-container`}>
+        <select class="rating-select" id={`rating-select`}>
+            <option value="" selected>Selecciona una puntuación</option>
+            <option value="1">1 ★</option>
+            <option value="2">2 ★★</option>
+            <option value="3">3 ★★★</option>
+            <option value="4">4 ★★★★</option>
+            <option value="5">5 ★★★★★</option>
+        </select>
+        <button class="rating-button" id={`rating-button`}>Puntuar</button>
+    </div> : <></>}
+    <div class="pages-container">
+        <ul role="list" class="link-pages-grid" id={`pages-ul-${id}`}>
+            {pages.map((pag, index) => (
+                <li class="li-page" id={`page-${index + 1}`}>
+                    <h2 class="input-page-title">{pag.title}</h2>
+                    <p class="input-page-description">{pag.description}</p>
+                    {pag.blocks && pag.blocks.map((block) => (
+                        <div class="div-buttons">
+                            {block.type === 'title' && <h3 class="item-block type-title">{block.content}</h3>}
+                            {block.type === 'text' && <pre class="item-block type-text">{block.content}</pre>}
+                            {block.type === 'code' && <code class="item-block type-code">{block.content}</code>}
+                        </div>
+                    ))}
+                </li>
+            ))}
+        </ul>
+    </div>
+</div>
+
+<script>
+    import { getDecodedToken, getToken } from '../utils/get_token'
+    import { newTutorialScore, getaTutorialScore, updateTutorialScore, checkUserBan } from '../api/useCases'
+    import Swal from 'sweetalert2';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        let details_id = document.getElementById("details-id").dataset.details;
+        const user_banned = await checkUserBan(getDecodedToken()['id'], getToken());
+
+        // Si se deben mostrar los detalles del tutorial (no lo estamos visualizando en un curso) y el usuario no está baneado permite editar o guardar una valoración del tutorial
+        if (details_id != "no" && user_banned == false) {
+            const select = document.getElementById(`rating-select`);
+            const button = document.getElementById(`rating-button`);
+            let tutorial_id = document.getElementById("tutorial-id").dataset.tutorial;
+            const user_id = getDecodedToken()['id'];
+
+            const token = getToken();
+
+            // Obtenemos una puntuación dada por este usuario en este tutorial si la hay
+            const already_marked = await getaTutorialScore(tutorial_id, user_id.toString(), token);
+
+            // Si existe no permite seleccionar otra a menos que le del al botón de editar, y puedes editar dicha puntuación
+            if(already_marked){
+                select['disabled'] = true;
+                button.textContent = 'Editar puntuación';
+                select['value'] = already_marked['score'];
+                button.addEventListener('click', async () => {
+                    select['disabled'] = false;
+                    button.textContent = 'Enviar nueva puntuación';
+                    button.addEventListener('click', async () => {
+                        Swal.fire({
+                            title: '¿Seguro?',
+                            text: '¿Estás seguro de querer actualizar la puntuación?',
+                            showDenyButton: true,
+                            confirmButtonText: 'Si',
+                            denyButtonText: 'No',
+                        }).then(async (result) => {
+                            if(result.isConfirmed) {
+                                const score = select['value'];
+                                await updateTutorialScore(tutorial_id, user_id.toString(), score, token);
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Puntuación guardada!',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-tutorial?id=${tutorial_id}`;  // Redirigir al tutorial
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Puntuación no guardada',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-tutorial?id=${tutorial_id}`;  // Redirigir al tutorial
+                                    }
+                                });
+                            }
+                        });
+                    });
+                })
+            } else {
+                // Crea una nueva puntuación de este usuario a este tutorial si pulsas el botón de enviar
+                button.addEventListener('click', async () => {
+                    const score = select['value'];
+                    button['disabled'] = true;
+                    const tutorial_score_data = {
+                        tutorial: `${parseInt(tutorial_id)}`,
+                        user: `${user_id}`,
+                        score: score,
+                    }
+                    try {
+                        Swal.fire({
+                            title: '¿Seguro?',
+                            text: '¿Estás seguro de la puntuación?',
+                            showDenyButton: true,
+                            confirmButtonText: 'Si',
+                            denyButtonText: 'No',
+                        }).then(async (result) => {
+                            if(result.isConfirmed) {
+                                await newTutorialScore(tutorial_score_data, token);
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Puntuación guardada!',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-tutorial?id=${tutorial_id}`;  // Redirigir al tutorial
+                                    }
+                                });
+                            } else {
+                                Swal.fire('Puntuación no guardada');
+                            }
+                        });
+                    } catch (error) {
+                        Swal.fire('Puntuación no guardada');
+                    } finally {
+                        button['disabled'] = false;
+                    }
+                });
+            }
+        }
+    });
+</script>

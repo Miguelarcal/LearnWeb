@@ -1,0 +1,165 @@
+---
+import Layout from '@layouts/Layout.astro';
+import TutorialCard from '@components/TutorialCard.astro';
+import { getTutorialsAvaidableFiltered } from '@api/useCases';
+import '@styles/minicards.css';
+import '@styles/filters.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import { jwtDecode } from 'jwt-decode';
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+const user_token_data = jwtDecode(token);
+
+const filters = {
+  text: Astro.cookies.get("textT")?.value ? Astro.cookies.get("textT")?.value : '',
+  minRating: Astro.cookies.get("minRatingT")?.value ? Astro.cookies.get("minRatingT")?.value : ' ',
+  maxRating: Astro.cookies.get("maxRatingT")?.value ? Astro.cookies.get("maxRatingT")?.value : ' ',
+  sortBy: Astro.cookies.get("sortByT")?.value || 'recent',
+  order: Astro.cookies.get("orderT")?.value || 'desc',
+  hidden: user_token_data['role'] == 'ROLE_ADMIN' ? 'all' : 'available',
+};
+
+// Obtener tutoriales filtrados
+const tutorials = await getTutorialsAvaidableFiltered(filters, token);
+---
+
+<Layout title="Tutoriales disponibles">
+    <main>
+        <div id="contenido">
+            <div id="filters-container-wrapper">
+                <div id="filters-container">
+                    <!-- Búsqueda -->
+                    <input 
+                        placeholder="Buscar tutoriales..." 
+                        id="filter-input" 
+                        value={filters.text}
+                        class="search-input"
+                    />
+                    
+                    <div class="filters-row">
+                        <!-- Ordenación -->
+                        <select id="sort-by" class="filter-select">
+                            <option value="recent" selected={filters.sortBy === 'recent'}>Recientes primero</option>
+                            <option value="rating" selected={filters.sortBy === 'rating'}>Mejor puntuados</option>
+                            <option value="popular" selected={filters.sortBy === 'popular'}>Más populares</option>
+                        </select>
+
+                        <!-- Rating -->
+                        <div class="rating-filter">
+                            <span class="rating-label">Puntuación:</span>
+                            <div class="rating-inputs">
+                                <input 
+                                    type="number" 
+                                    id="min-rating" 
+                                    placeholder="Mín" 
+                                    min="0" max="5" 
+                                    value={filters.minRating}
+                                    class="rating-input"
+                                />
+                                <span class="rating-separator">-</span>
+                                <input 
+                                    type="number" 
+                                    id="max-rating" 
+                                    placeholder="Máx" 
+                                    min="0" max="5" 
+                                    value={filters.maxRating}
+                                    class="rating-input"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones centrados -->
+                    <div class="actions-center">
+                        <button id="apply-filters" class="action-button-filter action-button apply">Aplicar</button>
+                        <button id="reset-filters" class="action-button-filter action-button reset">Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de tutoriales -->
+            <div class="minicards-container">
+                <ul role="list" class="link-minicard-grid">
+                    {tutorials.map((tutorial) => (
+                        <TutorialCard 
+                            id={tutorial[0].id}
+                            name={tutorial[0].name}
+                            description={tutorial[0].description}
+                            rating={tutorial.avgRating}
+                            ratingCount={tutorial.ratingCount}
+                            author={tutorial[0].author}
+                            add_date={tutorial[0].addDate}
+                            mod_date={tutorial[0].modDate}
+                            hidden={tutorial[0].hidden}
+                            user_role={user_token_data['role']}
+                            user_id={"0"}
+                        />
+                    ))}
+                </ul>
+            </div>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>
+
+<style>
+
+    #input-div{
+        display: flex;
+    }
+
+    #contenido{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+
+</style>
+
+<script>
+    
+    // Manejar aplicación de filtros
+    document.getElementById('apply-filters').addEventListener('click', applyFilters);
+    
+    // Manejar reset de filtros
+    document.getElementById('reset-filters').addEventListener('click', () => {
+        ['filterText', 'minRating', 'maxRating', 'sortBy', 'order'].forEach(name => {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+        document.getElementById('filter-input')['value'] = '';
+        document.getElementById('min-rating')['value'] = '';
+        document.getElementById('max-rating')['value'] = '';
+        document.getElementById('sort-by')['value'] = 'recent';
+
+        applyFilters();
+    });
+    
+    // Permitir búsqueda con Enter
+    document.getElementById('filter-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyFilters();
+    });
+    
+    function applyFilters() {
+
+        const text = document.getElementById('filter-input')['value'] ? document.getElementById('filter-input')['value'] : ' ';
+        const minRating = document.getElementById('min-rating')['value'] ? document.getElementById('min-rating')['value'] : ' ';
+        const maxRating = document.getElementById('max-rating')['value'] ? document.getElementById('max-rating')['value'] : ' ';
+        const sortBy = document.getElementById('sort-by')['value'] ? document.getElementById('sort-by')['value'] : 'recent';
+
+        const filters = {
+            textT: text,
+            minRatingT: minRating,
+            maxRatingT: maxRating,
+            sortByT: sortBy,
+        };
+        
+        // Guardar en cookies
+        Object.entries(filters).forEach(([name, value]) => {
+            if (value) document.cookie = `${name}=${value};path=/`;
+        });
+        
+        location.reload();
+    }
+</script>

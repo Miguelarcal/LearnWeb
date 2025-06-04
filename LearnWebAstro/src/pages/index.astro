@@ -1,0 +1,68 @@
+---
+import { getCoursesAvaidable, getTutorialsAvaidable } from '@api/useCases';
+import ArrowUp from '@components/ArrowUp.astro';
+import CourseCard from '@components/CourseCard.astro';
+import TutorialCard from '@components/TutorialCard.astro';
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+
+const base_path = import.meta.env.BASE_URL;
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+// Obtenemos los tutoriales y cursos disponibles (los que no estan ocultos o "hidden") y cogemos los 3 primeros (los más recientes)
+let tutorials = await getTutorialsAvaidable(token);
+let tut_last_3 = tutorials.slice(0, 3);
+let courses = await getCoursesAvaidable(token);
+let cou_last_3 = courses.slice(0, 3);
+---
+
+<Layout title="Inicio">
+	<main>
+        <h1>Últimos tutoriales</h1>
+        <div class="minicards-container">
+            <ul role="list" class="link-minicard-grid">
+                <!-- Mapeamos estos 3 tutoriales y los mostramos en "cajas" con el componente TutorialCard -->
+                {tut_last_3.map((tutorial) => (
+                    <TutorialCard 
+                        id={tutorial.id}
+                        name={tutorial.name}
+                        description={tutorial.description}
+                        rating="ni"
+                        ratingCount='ni'
+                        author={tutorial.author}
+                        add_date={tutorial.addDate}
+                        mod_date={tutorial.modDate}
+                        hidden={tutorial.hidden}
+                        user_role={"NO_ROLE"}
+                        user_id={"0"}
+                    />
+                ))}
+            </ul>
+        </div>
+
+        <h1>Últimos cursos</h1>
+        <div class="minicards-container">
+            <ul role="list" class="link-minicard-grid">
+                <!-- Mapeamos estos 3 cursos y los mostramos en "cajas" con el componente CourseCard -->
+                {cou_last_3.map((course) => (
+                    <CourseCard 
+                        id={course.id}
+                        name={course.name}
+                        description={course.description}
+                        rating='ni'
+                        ratingCount='ni'
+                        author={course.author}
+                        hidden={course.hidden}
+                        user_role={"NO_ROLE"}
+                        user_id={"0"}
+                        add_date={course.addDate}
+                        mod_date={course.modDate}
+                        difficulty={course.difficulty}
+                    />
+                ))}
+            </ul>
+        </div>
+        <ArrowUp />
+	</main>
+</Layout>

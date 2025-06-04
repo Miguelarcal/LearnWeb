@@ -5,8 +5,29 @@ namespace App\Entity;
 use App\Repository\BlockRepository;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\Controller\ApiController;
 
-#[ApiResource]
+#[ApiResource(
+    description: 'App blocks',
+    operations: [
+        new Get(),
+        new Post(
+            name: 'new block v2',
+            routeName: 'app_block_new_v2'
+        ),
+        new GetCollection(),
+        new Post(),
+        new Put(),
+        new Patch(),
+        new Delete(),
+    ]
+)]
 #[ORM\Entity(repositoryClass: BlockRepository::class)]
 class Block
 {

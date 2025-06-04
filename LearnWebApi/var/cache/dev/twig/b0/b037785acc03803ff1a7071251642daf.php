@@ -245,6 +245,6 @@ class __TwigTemplate_065a6040dd5644bfc6059ded6701690d extends Template
 
 </body>
 </html>
-", "@ApiPlatform/Graphiql/index.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/Graphiql/index.html.twig");
+", "@ApiPlatform/Graphiql/index.html.twig", "/var/www/symfony/vendor/api-platform/core/src/Symfony/Bundle/Resources/views/Graphiql/index.html.twig");
     }
 }

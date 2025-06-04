@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "8888:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  frontend:
+    build: ./LearnWebAstro
+    command: npm run dev -- --host 0.0.0.0
+    #ports:
+    #  - "4321:4321"
+    environment:
+      - PUBLIC_API=/api
+    volumes:
+      - ./LearnWebAstro:/app
+      - /app/node_modules
+    #depends_on:
+    #  - backend
+    networks:
+      - app-network
+
+  backend:
+    build: ./LearnWebApi
+    #ports:
+    #  - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql://root:root@db:3306/LearnWeb
+      - APP_ENV=dev
+    volumes:
+      - ./LearnWebApi:/var/www/symfony
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: LearnWeb
+    #ports:
+    #  - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

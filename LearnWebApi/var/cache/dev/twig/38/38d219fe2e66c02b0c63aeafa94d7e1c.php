@@ -982,6 +982,6 @@ $this->env->getRuntime('Symfony\Component\Form\FormRenderer')->searchAndRenderBl
     {%- set force_error = true -%}
     {{- block('form_row') -}}
 {%- endblock datetime_row %}
-", "bootstrap_base_layout.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/vendor/symfony/twig-bridge/Resources/views/Form/bootstrap_base_layout.html.twig");
+", "bootstrap_base_layout.html.twig", "/var/www/symfony/vendor/symfony/twig-bridge/Resources/views/Form/bootstrap_base_layout.html.twig");
     }
 }

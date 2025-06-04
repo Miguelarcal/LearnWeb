@@ -14,6 +14,7 @@ class DefaultsConfig
     private $allowOrigin;
     private $allowHeaders;
     private $allowMethods;
+    private $allowPrivateNetwork;
     private $exposeHeaders;
     private $maxAge;
     private $hosts;
@@ -70,6 +71,19 @@ class DefaultsConfig
     {
         $this->_usedProperties['allowMethods'] = true;
         $this->allowMethods = $value;
+
+        return $this;
+    }
+
+    /**
+     * @default false
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function allowPrivateNetwork($value): static
+    {
+        $this->_usedProperties['allowPrivateNetwork'] = true;
+        $this->allowPrivateNetwork = $value;
 
         return $this;
     }
@@ -178,6 +192,12 @@ class DefaultsConfig
             unset($value['allow_methods']);
         }
 
+        if (array_key_exists('allow_private_network', $value)) {
+            $this->_usedProperties['allowPrivateNetwork'] = true;
+            $this->allowPrivateNetwork = $value['allow_private_network'];
+            unset($value['allow_private_network']);
+        }
+
         if (array_key_exists('expose_headers', $value)) {
             $this->_usedProperties['exposeHeaders'] = true;
             $this->exposeHeaders = $value['expose_headers'];
@@ -233,6 +253,9 @@ class DefaultsConfig
         }
         if (isset($this->_usedProperties['allowMethods'])) {
             $output['allow_methods'] = $this->allowMethods;
+        }
+        if (isset($this->_usedProperties['allowPrivateNetwork'])) {
+            $output['allow_private_network'] = $this->allowPrivateNetwork;
         }
         if (isset($this->_usedProperties['exposeHeaders'])) {
             $output['expose_headers'] = $this->exposeHeaders;

@@ -227,6 +227,6 @@ class __TwigTemplate_311b655a1eacd27786136de79febd64a extends Template
 
     <a href=\"{{ path('app_user_new') }}\">Create new</a>
 {% endblock %}
-", "user/index.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/user/index.html.twig");
+", "user/index.html.twig", "/var/www/symfony/templates/user/index.html.twig");
     }
 }

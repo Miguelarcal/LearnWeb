@@ -1,0 +1,84 @@
+<div class="col">
+  <div class="bar top"></div>
+  <div class="bar middle"></div>
+  <div class="bar bottom"></div>
+</div>
+
+<style>
+
+  #app {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .hidden {
+    visibility: hidden;
+  }
+
+  .special-con {
+    cursor: pointer;
+    display: inline-block;
+  }
+  
+  .bar {
+    display: block;
+    height: 5px;
+    width: 40px;
+    background: white;
+    margin: 5px auto;
+  }
+ 
+  .middle {
+    margin: 0 auto;
+  }
+  
+  .bar {
+    -webkit-transition: all .4s ease;
+    -moz-transition: all .4s ease;
+    -ms-transition: all .4s ease;
+    -o-transition: all .4s ease;
+    transition: all .4s ease;
+  }
+  
+  .active .top{
+    -webkit-transform: translateY(10px) rotateZ(45deg);
+    -moz-transform: translateY(10px) rotateZ(45deg);
+    -ms-transform: translateY(10px) rotateZ(45deg);
+    -o-transform: translateY(10px) rotateZ(45deg);
+    transform: translateY(10px) rotateZ(45deg);
+  }
+  .active .bottom{
+    -webkit-transform: translateY(-10px) rotateZ(-45deg);
+    -moz-transform: translateY(-10px) rotateZ(-45deg);
+    -ms-transform: translateY(-10px) rotateZ(-45deg);
+    -o-transform: translateY(-10px) rotateZ(-45deg);
+    transform: translateY(-10px) rotateZ(-45deg);
+  } 
+
+  .active .middle{
+    width: 0;
+  }
+  
+  .special-con {
+    margin: 0 auto;
+    -webkit-transition: all .7s ease;
+    -moz-transition: all .7s ease;
+    -ms-transition: all .7s ease;
+    -o-transition: all .7s ease;
+    transition: all .7s ease;
+  }
+</style>
+
+<script>
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const burguerMenu = document.querySelector(".col");
+
+    // Al hacer click sobre el burguer menú, se activa o desactiva la propiedad de active, con el que determinamos una animación
+    burguerMenu.addEventListener("click", () => {
+        burguerMenu.classList.toggle("active");
+    });
+  });
+
+</script>

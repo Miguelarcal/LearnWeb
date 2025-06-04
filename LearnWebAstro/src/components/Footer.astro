@@ -1,0 +1,71 @@
+---
+import logo from "@public/LearnWebLogoW.png";
+import '@styles/footer.css';
+---
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <!-- Logo y nombre -->
+    <div class="footer-brand">
+        <a
+            href="#"
+            target="blank_"
+            rel="noreferrer"
+            title="LearnWeb logo"
+            
+        >
+            <img
+                class="footer-logo"
+                src={logo.src}
+                alt="LearnWeb logo"
+            />
+        </a>
+      <span class="site-name">LearnWeb</span>
+      <p class="footer-slogan">Cursos para aprender programación</p>
+    </div>
+
+    <!-- Sección de navegación -->
+    <div class="footer-section">
+      <h3 class="footer-title">Navegación</h3>
+      <ul class="footer-links">
+        <li><a href="/courses">Cursos</a></li>
+        <li><a href="/tutorials">Tutoriales</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Sobre nosotros</a></li>
+      </ul>
+    </div>
+
+    <!-- Sección legal -->
+    <div class="footer-section">
+      <h3 class="footer-title">Legal</h3>
+      <ul class="footer-links">
+        <li><a href="#">Términos de uso</a></li>
+        <li><a href="#">Política de privacidad</a></li>
+        <li><a href="#">Cookies</a></li>
+      </ul>
+    </div>
+
+    <!-- Contacto y redes -->
+    <div class="footer-section">
+      <h3 class="footer-title">Contacto</h3>
+      <ul class="footer-links">
+        <li><a href="mailto:contacto@learnweb.com">contacto@learnweb.com</a></li>
+        <li><a href="#">Formulario de contacto</a></li>
+      </ul>
+      <div class="social-icons">
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright -->
+  <div class="footer-bottom">
+    <p>© 2025 LearnWeb. Todos los derechos reservados.</p>
+    <p class="footer-credits">Desarrollado con Astro, React y Node.js</p>
+    <div class="footer-credits">
+        Diseñado por <a target="blank_" rel="noreferrer" href="https://www.linkedin.com/in/miguel-arroyo-calvo-b071ab306">Miguel Arroyo Calvo</a>
+    </div>
+  </div>
+</footer>

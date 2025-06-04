@@ -1,0 +1,14 @@
+---
+import ArrowUp from '@components/ArrowUp.astro';
+import Layout from '@layouts/Layout.astro';
+
+const base_path = import.meta.env.BASE_URL;
+---
+
+<Layout title="Acceso restringido">
+	<main>
+        Tienes el acceso restringido ya que has sido baneado
+        <a class="link" href={`${base_path}/`}>Inicio</a>
+        <ArrowUp />
+	</main>
+</Layout>

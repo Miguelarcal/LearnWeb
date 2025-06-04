@@ -1,0 +1,134 @@
+---
+import logo from "@public/LearnWebLogoW.png";
+import arrow from "@public/abajo.png";
+import Burger from "./Burger.astro";
+import '@styles/header.css';
+
+const base_path = import.meta.env.BASE_URL;
+---
+<header class="site-header">
+  <div class="header-container">
+    <!-- Logo y marca -->
+    <div class="header-brand">
+      <a href={base_path} class="logo-link">
+        <img src={logo.src} alt="LearnWeb Logo" class="header-logo">
+        <span class="site-title">LearnWeb</span>
+      </a>
+    </div>
+
+    <!-- Menú hamburguesa -->
+    <button class="mobile-menu-toggle" aria-label="Menú de navegación">
+      <Burger />
+    </button>
+
+    <!-- Navegación principal -->
+    <nav class="main-nav">
+      <ul class="nav-list">
+        <li><a href={base_path} class="nav-link">Inicio</a></li>
+        <li><a href={`${base_path}/tutorials`} class="nav-link">Tutoriales</a></li>
+        <li><a href={`${base_path}/courses`} class="nav-link">Cursos</a></li>
+        
+        <!-- Menú desplegable Mi contenido -->
+        <li class="dropdown">
+          <button class="dropdown-toggle nav-link">
+            Mi contenido
+            <img src={arrow.src} alt="" class="dropdown-arrow">
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href={`${base_path}/new-tutorial`} class="dropdown-link">Nuevo tutorial</a></li>
+            <li><a href={`${base_path}/new-course`} class="dropdown-link">Nuevo curso</a></li>
+            <li><a href={`${base_path}/my-tutorials`} class="dropdown-link">Mis tutoriales</a></li>
+            <li><a href={`${base_path}/my-courses`} class="dropdown-link">Mis cursos</a></li>
+          </ul>
+        </li>
+        
+        <!-- Menú desplegable Mi perfil -->
+        <li class="dropdown">
+          <button class="dropdown-toggle nav-link">
+            Mi perfil
+            <img src={arrow.src} alt="" class="dropdown-arrow">
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href={`${base_path}/admin-panel`} class="dropdown-link">Panel de administrador</a></li>
+            <li><a href={`${base_path}/register`} class="dropdown-link">Registrarse</a></li>
+            <li><a href={`${base_path}/login`} class="dropdown-link">Cerrar sesión</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Función para manejar la visibilidad del menú según el tamaño de pantalla
+  function handleMenuVisibility() {
+    const nav = document.querySelector('.main-nav');
+    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    
+    if (window.innerWidth > 900) {
+      nav['style'].display = 'block';
+      nav['style'].visibility = 'visible';
+      mobileToggle['style'].display = 'none';
+    } else {
+        nav['style'].display = 'none';
+      nav['style'].visibility = 'hidden';
+      mobileToggle['style'].display = 'block';
+    }
+  }
+
+  // Ejecutar al cargar y al redimensionar
+  document.addEventListener('DOMContentLoaded', () => {
+    handleMenuVisibility();
+    
+    // Lógica para el menú móvil
+    document.querySelector('.mobile-menu-toggle').addEventListener('click', () => {
+      const nav = document.querySelector('.main-nav');
+      
+      if (window.innerWidth <= 900) {
+        nav['style'].display = nav['style'].display === 'flex' ? 'none' : 'flex';
+        nav['style'].visibility = nav['style'].visibility === 'visible' ? 'hidden' : 'visible';
+        
+        
+        // Animación para el menú móvil
+        if (nav['style'].display === 'flex') {
+          nav.classList.add('animate__animated', 'animate__fadeInDown');
+        } else {
+          nav.classList.remove('animate__animated', 'animate__fadeInDown');
+        }
+      }
+    });
+
+    // Lógica para los dropdowns en móvil
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        if (window.innerWidth <= 900) {
+          e.preventDefault();
+          const dropdown = toggle.parentElement;
+          const menu = dropdown.querySelector('.dropdown-menu');
+          
+          // Cerrar otros dropdowns abiertos
+          document.querySelectorAll('.dropdown-menu').forEach(m => {
+            if (m !== menu) m['style'].display = 'none';
+          });
+          
+          // Alternar el actual
+          menu['style'].display = menu['style'].display === 'block' ? 'none' : 'block';
+        }
+      });
+    });
+
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 900) {
+        if (!e.target['closest']('.dropdown') && !e.target['closest']('.mobile-menu-toggle')) {
+          document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu['style'].display = 'none';
+            menu['style'].visibility = 'hidden';
+          });
+        }
+      }
+    });
+  });
+
+  window.addEventListener('resize', handleMenuVisibility);
+</script>

@@ -213,6 +213,6 @@ class __TwigTemplate_7895f5ab042a748137f15ea781b0920b extends Template
 
     <a href=\"{{ path('app_page_new') }}\">Create new</a>
 {% endblock %}
-", "page/index.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/page/index.html.twig");
+", "page/index.html.twig", "/var/www/symfony/templates/page/index.html.twig");
     }
 }

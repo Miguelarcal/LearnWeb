@@ -1,0 +1,31 @@
+---
+import ArrowUp from '@components/ArrowUp.astro';
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+
+const base_path = import.meta.env.BASE_URL;
+---
+
+<Layout title="Inicio">
+	<main>
+                <div class="admin-panel">
+                        <a class="link action-button" href={`${base_path}/admin-users`}>Administrar usuarios</a><br>
+                        <a class="link action-button" href={`${base_path}/register-admin`}>Registrar nuevo administrador</a><br>
+                </div>
+                <ArrowUp />
+	</main>
+</Layout>
+
+<style is:inline>
+        .admin-panel{
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                width: 90%;
+                margin: 3rem;
+        }
+
+        .admin-panel a{
+                margin: 2rem;
+        }
+</style>

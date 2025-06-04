@@ -40,4 +40,46 @@ class UserRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function validateUser($nickname): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.nickname = :nickname')
+            ->setParameter('nickname', $nickname)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
+    public function findOneUserByNicknameAndPassword($nickname, $passwd): ?User 
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.nickname = :nickname')
+            ->andWhere('u.passwd = :passwd')
+            ->setParameter('nickname', $nickname)
+            ->setParameter('passwd', $passwd)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
+    public function findOneUserByNicknameAndEmail($nickname, $email): ?User 
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.nickname = :nickname')
+            ->orWhere('u.email = :email')
+            ->setParameter('nickname', $nickname)
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
+
+    public function findOneById($id): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
 }

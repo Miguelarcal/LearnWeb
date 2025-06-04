@@ -1,0 +1,315 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import '@styles/seecourses.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import SeeTutorial from '@components/SeeTutorial.astro';
+import { customEndpointJwt, getCourseById, checkUserBan, averageCourseScore } from '@api/useCases';
+import { formatISODateAuto } from '@utils/formatDate';
+import { decodeToken } from '@utils/get_token';
+import { formatFloat } from '@utils/formatFloat';
+
+const base_path = import.meta.env.BASE_URL;
+const id = Astro.url.searchParams.get('id');
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+// Obtenemos un curso dado su ID
+const course = await getCourseById(id, token);
+const tutorials_api = course.tutorials;
+
+// Obtenemos la asociación de tutoriales (tutorial con id x va en curso x)
+const tutorials_obj = await Promise.all(
+    tutorials_api.map(async (tut) => {
+        return await customEndpointJwt(tut, token);
+    })
+);
+
+// Obtenemos los tutoriales de esa asociación
+const tutorials_obj_2 = await Promise.all(
+    tutorials_obj.map(async (tut) => {
+        return await customEndpointJwt(tut.tutorial, token);
+    })
+);
+
+const user_id = decodeToken(token)['id'];
+
+const autor = await customEndpointJwt(course.author, token);
+
+const user_banned = await checkUserBan(user_id, token);
+
+const avr_score = await averageCourseScore(course.id, token);
+---
+<Layout title="Ver curso">
+    <main>
+        <h1>{course.name}</h1>
+        <p>{course.description}</p>
+        <!-- Fechas formateadas con formatISODateAuto -->
+        <p class="dates"><i>📅</i> Creación: {formatISODateAuto(course.addDate)}</p>
+        <p class="dates"><i>✏️</i> Modificación: {formatISODateAuto(course.modDate)}</p>
+        <div class="rating-div"><i>⭐</i>
+            <!-- Rating formateado con formatFloat -->
+            <span class="minicard-rating-value">{(avr_score['score_count'] > 0) ? `${formatFloat(avr_score['average_score'])}` : <>Sin valoraciones aún</>}</span>
+            <span class="minicard-rating-count">{(avr_score['score_count'] > 0) ? avr_score['score_count'] : <></>}</span>
+        </div>
+        <p><i>👤</i> {autor['nickname']}</p>
+        <div data-course={id} style="display: none" id="course-id"></div>
+        <!-- Si el usuario es el autor de este curso o está baneado no se le muestra la opción de darle puntuación -->
+        {(user_id != autor['id'] && user_banned == false) ? <div class="rating-container" id={`rating-container`}>
+            <select class="rating-select" id={`rating-select-course`}>
+                <option value="" disabled selected>Selecciona una puntuación</option>
+                <option value="1">1 ★</option>
+                <option value="2">2 ★★</option>
+                <option value="3">3 ★★★</option>
+                <option value="4">4 ★★★★</option>
+                <option value="5">5 ★★★★★</option>
+            </select>
+            <button class="rating-button" id='rating-button-course'>Puntuar</button>
+            <p class="rating-feedback" id='rating-feedback-course'></p>
+        </div> : <></>}
+        <div id="div-grid">
+            <div id="div-left">
+                <ul>
+                    <!-- Botones asociados a cada tutorial -->
+                    {tutorials_obj_2.map((tutorial, index) => (
+                        <li>
+                            <button id={`button-visibility`} data-id={index} class={`button-vis ${index === 0 ? 'active' : ''}`}>
+                                {tutorial.name}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div id="div-right">
+                <!-- Mapeamos los tutoriales pero los ocultamos todo menos el primero al cargar la página -->
+                {tutorials_obj_2.map((obj, index) => (
+                    <div style={{display: index === 0 ? 'block': 'none'}} class="tutorial-div" data-id={index}>
+                        <SeeTutorial 
+                            id={obj.id}
+                            show_details="no"
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+        <!-- Botones de atras, siguiente -->
+        <div class="next-prev-container">
+            <button id="prev-page">{'<<'}</button>
+            <button id="next-page">{'>>'}</button>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>
+
+<style is:inline>
+    .tutorial-viewer {
+        padding: 0;
+    }
+</style>
+
+<script>
+    import { getDecodedToken, getToken } from '../utils/get_token'
+    import { newCourseScore, getaCourseScore, updateCourseScore, checkUserBan } from '../api/useCases'
+    import Swal from 'sweetalert2';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+
+        const user_id = getDecodedToken()['id'];
+        const token = getToken();
+        const user_banned = await checkUserBan(user_id, token);
+
+        let course_id = document.getElementById("course-id").dataset.course;
+        const select_c = document.getElementById(`rating-select-course`);
+        const button_c = document.getElementById(`rating-button-course`) ;
+        const feedback = document.getElementById(`rating-feedback-course`);
+        // Función que llama a API que busca si el usuario ya ha valorado este curso, y lo obtiene si lo hay
+        const already_marked = await getaCourseScore(course_id, user_id.toString(), token);
+
+        // Si existe el botón de valorar
+        if(button_c){
+            // Si ya ha sido valorado, nos da la opción de editar la valoración
+            if(already_marked){
+                select_c['disabled'] = true;
+                button_c.textContent = 'Editar puntuación';
+                select_c['value'] = already_marked['score'];
+                // La primera vez que pulsamos sobre editar nos habilita el selector de puntuación
+                button_c.addEventListener('click', async () => {
+                    select_c['disabled'] = false;
+                    button_c.textContent = 'Enviar nueva puntuación';
+                    // La segunda vez podemos actualizar esta puntuación
+                    button_c.addEventListener('click', async () => {
+                        Swal.fire({
+                            title: '¿Seguro?',
+                            text: '¿Estás seguro de querer actualizar la puntuación?',
+                            showDenyButton: true,
+                            confirmButtonText: 'Si',
+                            denyButtonText: 'No',
+                        }).then(async (result) => {
+                            if(result.isConfirmed) {
+                                const score = select_c['value'];
+                                // Actualizamos la puntuación
+                                await updateCourseScore(course_id, user_id.toString(), score, token);
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Puntuación guardada!',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-course?id=${course_id}`;  // Redirigir a este curso
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Puntuación no guardada',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-course?id=${course_id}`;  // Redirigir a este curso
+                                    }
+                                });
+                            }
+                        });
+                    });
+                })
+            } else {
+                // Si no ha sido puntuado con anterioridad y le damos a puntuar
+                button_c.addEventListener('click', async () => {
+                    const score = select_c['value'];
+
+                    button_c['disabled'] = true;
+
+                    const course_score_data = {
+                        course: `${parseInt(course_id)}`,
+                        user: `${user_id}`,
+                        score: score,
+                    }
+
+                    try {
+                        Swal.fire({
+                            title: '¿Seguro?',
+                            text: '¿Estás seguro de la puntuación?',
+                            showDenyButton: true,
+                            confirmButtonText: 'Si',
+                            denyButtonText: 'No',
+                        }).then(async (result) => {
+                            if(result.isConfirmed) {
+                                // Creamos la puntuación
+                                await newCourseScore(course_score_data, token);
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Puntuación guardada!',
+                                    text: 'Recargando...',
+                                    timer: 1000,
+                                    willClose: () => {
+                                        window.location.href = `/see-course?id=${course_id}`;  // Redirigir a este curso
+                                    }
+                                });
+                            } else {
+                                Swal.fire('Puntuación no guardada');
+                            }
+                        });
+                    } catch (error) {
+                        feedback.textContent = error.message;
+                        feedback.style.color = '#f44336';
+                    } finally {
+                        button_c['disabled'] = false;
+                    }
+                });
+            }
+        }
+
+        // Índice del tutorial que será visible
+        let visible = 0;
+
+        // Máximo indice de tutoriales que se puedan ver
+        let max_visible = document.getElementsByClassName("tutorial-div").length-1;
+
+        // Botones del selector de tutorial
+        const buttons = document.getElementsByClassName("button-vis");
+        // Bucle for para los botones
+        for(let i=0;i<buttons.length;i++){
+            // Por cada botón añade un listener para cuando le haces click
+            buttons.item(i).addEventListener("click", () => {
+                for(let j=0;j<buttons.length;j++){
+                    // Les quita la clase active que es la que les da un fondo verde indicativo de que es el que se está visualizando
+                    buttons.item(j).classList.contains("active") ? buttons.item(j).classList.remove("active") : null;
+                }
+                // Le damos la clase active al botón pulsado
+                buttons.item(i).classList.add("active");
+                // Obtenemos el id del tutorial que vamos a mostrar del dataset
+                const make_visible = buttons.item(i)['dataset'].id;
+                // Mostramos el tutorial
+                make_visible_func(make_visible);
+            });
+        }
+
+        /**
+         * Función que muestra un tutorial pasado su ID
+         * @param make_visible_n ID del tutorial que vamos a mostrar
+         */
+        const make_visible_func = (make_visible_n) => {
+            // Contenedor de los tutoriales
+            const tutorials_divs = document.getElementsByClassName("tutorial-div");
+            for(let k=0;k<tutorials_divs.length;k++){
+                // Recorremos los tutoriales y si el id que tienen en su dataset coincide con el que queremos mostrar le damos display: block
+                if(tutorials_divs.item(k)['dataset'].id == make_visible_n){
+                    tutorials_divs.item(k)['style'] = "display: block";
+                    // Cambiamos el índice actual del que se está mostrando
+                    visible = make_visible_n;
+                } else {
+                    // El resto tienen display: none para ocultarlos
+                    tutorials_divs.item(k)['style'] = "display: none";
+                }
+            }
+        }
+
+        // Botones de previo, siguiente
+        const prev_button = document.getElementById("prev-page");
+        const next_button = document.getElementById("next-page");
+
+        // Si le damos al botón de previo
+        prev_button.addEventListener("click", () => {
+            // Nos lleva arriba de la paǵina web
+            window.scrollTo({top:0, left:0, behavior:'smooth'})
+            // Si el índice del que se muestra es mayor de 0 (es decir, que no es el primer tutorial a mostrar del curso)
+            if(visible>0){
+                // Hace visible al anterior o previo a este
+                make_visible_func(visible-1);
+                let changed = false;
+                // Cambia el botón activo
+                for(let j=0;j<buttons.length;j++){
+                    (buttons.item(j).classList.contains("active") && !changed) ? (
+                        buttons.item(j).classList.remove("active"),
+                        buttons.item(j-1).classList.add("active"),
+                        changed = true
+                    ) : null;
+                }
+            }
+        });
+
+        // Si le damos a botón de siguiente
+        next_button.addEventListener("click", () => {
+            // Nos lleva arriba de la web
+            window.scrollTo({top:0, left:0, behavior:'smooth'})
+            // El índice del tutorial visible es menor al máximo que se permite (es decir, no es el último tutorial del curso)
+            if(visible<max_visible){
+                // Aumenta el índice
+                visible++;
+                // Muestra el tutorial con el índice aumentado en 1, es decir, el siguiente al que había antes
+                make_visible_func(visible);
+                let changed = false;
+                // Cambia el botón activo
+                for(let j=0;j<buttons.length;j++){
+                    (buttons.item(j).classList.contains("active") && !changed) ? (
+                        buttons.item(j).classList.remove("active"),
+                        buttons.item(j+1).classList.add("active"),
+                        changed = true
+                    ) : null;
+                }
+            }
+        });
+    });
+
+</script>
+

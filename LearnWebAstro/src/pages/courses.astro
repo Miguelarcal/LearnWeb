@@ -1,0 +1,180 @@
+---
+import Layout from '@layouts/Layout.astro';
+import CourseCard from '@components/CourseCard.astro';
+import { getCoursesAvaidableFiltered } from '@api/useCases';
+import '@styles/minicards.css';
+import '@styles/filters.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import { jwtDecode } from 'jwt-decode';
+
+const token = Astro.cookies.get("jwt_token")?.value;
+
+const user_token_data = jwtDecode(token);
+
+// Filtros que obtenemos de las cookies
+const filters = {
+  text: Astro.cookies.get("textC")?.value ? Astro.cookies.get("textC")?.value : '',
+  minRating: Astro.cookies.get("minRatingC")?.value ? Astro.cookies.get("minRatingC")?.value : ' ',
+  maxRating: Astro.cookies.get("maxRatingC")?.value ? Astro.cookies.get("maxRatingC")?.value : ' ',
+  difficulty: Astro.cookies.get("difficultyC")?.value || 'any',
+  sortBy: Astro.cookies.get("sortByC")?.value || 'recent',
+  order: Astro.cookies.get("orderC")?.value || 'desc',
+  hidden: user_token_data['role'] == 'ROLE_ADMIN' ? 'all' : 'available',
+};
+
+// Obtener tutoriales filtrados
+const courses = await getCoursesAvaidableFiltered(filters, token);
+---
+
+<Layout title="Cursos disponibles">
+    <main>
+        <div id="contenido">
+            <!-- Contenedor de filtros optimizado -->
+            <div id="filters-container-wrapper">
+                <div id="filters-container">
+                    <!-- Búsqueda -->
+                    <input 
+                        placeholder="Buscar cursos..." 
+                        id="filter-input" 
+                        value={filters.text || ''}
+                        class="search-input"
+                    />
+                    
+                    <!-- Fila de filtros -->
+                    <div class="filters-row">
+                        <!-- Dificultad -->
+                        <select id="difficulty" class="filter-select">
+                            <option value="any" selected={filters.difficulty === 'any'}>Todas dificultades</option>
+                            <option value="beginner" selected={filters.difficulty === 'beginner'}>Principiante</option>
+                            <option value="intermediate" selected={filters.difficulty === 'intermediate'}>Intermedio</option>
+                            <option value="advanced" selected={filters.difficulty === 'advanced'}>Avanzado</option>
+                        </select>
+                        
+                        <!-- Ordenación -->
+                        <select id="sort-by" class="filter-select">
+                            <option value="recent" selected={filters.sortBy === 'recent'}>Recientes primero</option>
+                            <option value="rating" selected={filters.sortBy === 'rating'}>Mejor puntuados</option>
+                            <option value="popular" selected={filters.sortBy === 'popular'}>Más populares</option>
+                        </select>
+
+                        <!-- Rating -->
+                        <div class="rating-filter">
+                            <span class="rating-label">Puntuación:</span>
+                            <div class="rating-inputs">
+                                <input 
+                                    type="number" 
+                                    id="min-rating" 
+                                    placeholder="Mín" 
+                                    min="0" max="5" 
+                                    value={filters.minRating || ''}
+                                    class="rating-input"
+                                />
+                                <span class="rating-separator">-</span>
+                                <input 
+                                    type="number" 
+                                    id="max-rating" 
+                                    placeholder="Máx" 
+                                    min="0" max="5" 
+                                    value={filters.maxRating || ''}
+                                    class="rating-input"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones centrados -->
+                    <div class="actions-center">
+                        <button id="apply-filters" class="action-button-filter action-button apply">Aplicar</button>
+                        <button id="reset-filters" class="action-button-filter action-button reset">Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="minicards-container">
+                <ul role="list" class="link-minicard-grid">
+                    {courses.map((course) => (
+                        <CourseCard 
+                            id={course[0].id}
+                            name={course[0].name}
+                            description={course[0].description}
+                            rating={course.avgRating}
+                            ratingCount={course.ratingCount}
+                            author={course[0].author}
+                            hidden={course[0].hidden}
+                            user_role={user_token_data['role']}
+                            user_id={"0"}
+                            add_date={course[0].addDate}
+                            mod_date={course[0].modDate}
+                            difficulty={course[0].difficulty}
+                        />
+                    ))}
+                </ul>
+            </div>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>
+
+<style>
+
+    #contenido{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+</style>
+
+<script>
+    
+    // Manejar aplicación de filtros
+    document.getElementById('apply-filters').addEventListener('click', applyFilters);
+    
+    // Manejar reset de filtros
+    document.getElementById('reset-filters').addEventListener('click', () => {
+        // Borramos las cookies
+        ['filterTextC', 'minRatingC', 'maxRatingC', 'difficultyC', 'sortByC', 'orderC'].forEach(name => {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+        // Borramos los valores de los filtros
+        document.getElementById('filter-input')['value'] = '';
+        document.getElementById('min-rating')['value'] = '';
+        document.getElementById('max-rating')['value'] = '';
+        document.getElementById('difficulty')['value'] = 'any';
+        document.getElementById('sort-by')['value'] = 'recent';
+
+        // Reseteamos la busqueda: esta sería la búsqueda por defecto, la de todos los cursos disponibles (no ocultos)
+        applyFilters();
+    });
+    
+    // Permitir búsqueda con Enter
+    document.getElementById('filter-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyFilters();
+    });
+    
+    /**
+     * Aplica los filtros, es decir, crea las cookies y recarga la página
+     */
+    function applyFilters() {
+
+        const text = document.getElementById('filter-input')['value'] ? document.getElementById('filter-input')['value'] : ' ';
+        const minRating = document.getElementById('min-rating')['value'] ? document.getElementById('min-rating')['value'] : ' ';
+        const maxRating = document.getElementById('max-rating')['value'] ? document.getElementById('max-rating')['value'] : ' ';
+        const difficulty = document.getElementById('difficulty')['value'] ? document.getElementById('difficulty')['value'] : 'any';
+        const sortBy = document.getElementById('sort-by')['value'] ? document.getElementById('sort-by')['value'] : 'recent';
+
+        const filters = {
+            textC: text,
+            minRatingC: minRating,
+            maxRatingC: maxRating,
+            difficultyC: difficulty,
+            sortByC: sortBy,
+        };
+        
+        // Guardar en cookies
+        Object.entries(filters).forEach(([name, value]) => {
+            if (value) document.cookie = `${name}=${value};path=/`;
+        });
+        
+        location.reload();
+    }
+</script>

@@ -25,3 +25,513 @@ https://www.php.net/manual/en/install.unix.debian.php
 - Configurado phpmyadmin
 
 - Creado la base de datos LearnWeb
+
+
+*********************************
+Para usar los contenedores Docker del proyecto
+
+*** Actualizamos por si acaso ***
+sudo apt-get update
+
+*** Instalamos las dependecias necesarias ***
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+
+sudo docker run hello-world ******para comprobar que docker funciona******
+
+sudo usermod -aG docker miguelarroyo ****para dar permisos al usuario de utilizar docker, cambiar el usuario al correcto en vuestro caso****
+
+newgrp docker ****aplicamos los cambios sin necesidad de reiniciar****
+
+docker compose version ****comprobamos la versión de docker para ver que la instalación es correcta****
+
+docker compose up -d --build
+*** para ejecutar los contenedores ***
+
+*** si el puerto está en uso deberías de parar el servicio que lo ocupa, que suele ser mariadb, igualmente deberíamos de comprobarlo ***
+sudo lsof -i :3306
+
+*** paramos el proceso ***
+sudo systemctl stop mysql
+
+*** podemos volver a usar sudo lsof -i :3306 ***
+
+*** si el puerto ya no está ocupado, volvemos a intentar ejecutar los contenedores ***
+docker compose up -d --build
+
+*** Podemos ver los contenedores activos ***
+docker ps
+
+*** Deberíamos ver lo siguiente: ***
+CONTAINER ID   IMAGE               COMMAND                  CREATED          STATUS          PORTS                  NAMES
+61a6be608650   learnweb-nginx      "/docker-entrypoint.…"   20 minutes ago   Up 20 minutes   0.0.0.0:8888->80/tcp   learnweb-nginx-1
+69131e0d368d   learnweb-backend    "docker-php-entrypoi…"   20 minutes ago   Up 20 minutes   8000/tcp, 9000/tcp     learnweb-backend-1
+62817037b396   mysql:8             "docker-entrypoint.s…"   20 minutes ago   Up 20 minutes   3306/tcp, 33060/tcp    learnweb-db-1
+3b6c45c40330   learnweb-frontend   "docker-entrypoint.s…"   20 minutes ago   Up 20 minutes   4321/tcp               learnweb-frontend-1
+*** O parecido, lo importante es que la imagen sea correcta, en el status ponga Up X minutes, los puertos sean los configurados y nos quedaremos con los nombres ***
+
+*** Vamos a ejecutar las migraciones para que se creen las bases de datos ***
+*** >> significa que está en el bash, no es parte del comando ***
+docker exect -it learnweb-backend-1 bash
+>> php bin/console doctrine:migrations:migrate
+(si pide confirmación, escribe yes y presiona ENTER)
+
+*** Ahora podemos acceder a la BBDD desde su contenedor Docker ***
+docker exec -it learnweb-db-1 mysql -u root -p LearnWeb
+>> SHOW TABLES;
+*** Podemos ejecutar cualquier consulta SQL, incluyendo introducir datos de prueba como haremos más tarde ***
+>> exit
+*** Para salir ***
+
+*** Podemos reiniciar los contenedores si queremos ***
+docker compose down && docker compose up -d --build
+
+*** Ahora deberíamos de poder acceder en el navegador a http://localhost:8888/login ***
+
+
+--- Parte de fallos en Docker ---
+Podemos iniciar sesión -> fetch (/api/login/nickname/passwd)
+Pero no podemos obtener los tutoriales disponibles (/api/tutorialsavaidable)
+
+Comprobaciones: 
+ - El prefijo de la ruta es igual en ambos fetch (/api)
+ - El error que muestra en la web es el siguiente: Failed to parse URL from /api/tutorialsavaidable
+ - Según los logs del contenedor del backend, ni siquiera le llega la petición de tutorialsavaidable
+ 
+--- Configuración de Docker y Nginx ---
+
+En carpeta raíz:
+
+docker-compose.yaml:
+
+version: "3.8"
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "8888:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  frontend:
+    build: ./LearnWebAstro
+    command: npm run dev -- --host 0.0.0.0
+    #ports:
+    #  - "4321:4321"
+    environment:
+      - PUBLIC_API=/api
+    volumes:
+      - ./LearnWebAstro:/app
+      - /app/node_modules
+    #depends_on:
+    #  - backend
+    networks:
+      - app-network
+
+  backend:
+    build: ./LearnWebApi
+    #ports:
+    #  - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql://root:root@db:3306/LearnWeb
+      - APP_ENV=dev
+    volumes:
+      - ./LearnWebApi:/var/www/symfony
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: LearnWeb
+    #ports:
+    #  - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+ 
+******************************** En nginx/Dockerfile: 
+
+FROM nginx:alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+****************************** En nginx/nginx.conf: 
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Frontend (Astro)
+    location / {
+        proxy_pass http://frontend:4321;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # HMR support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Backend (Symfony) - Cambiado a /api/
+    location /api/ {
+        proxy_pass http://backend:8000/;  # Barra final importante
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+********************************** En LearnWebAstro/Dockerfile: 
+
+FROM node:lts
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+ENV HOST=0.0.0.0
+ENV PORT=4321
+
+EXPOSE 4321
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+********************************** En LearnWebAstro/.dockerignore:
+
+.DS_Store
+node_modules
+dist
+.env
+
+********************************* LearnWebAstro/src/api/api.js:
+
+// Prefijo para las rutas (uso en Docker + proxy inverso Nginx)
+const API_PREFIX = "/api";
+
+/**
+ * Construye una URL completa para los endpoints de la API, eliminando /api duplicados, solo útil realmente cuando usamos Docker + proxy inverso Nginx
+ * @param {string} endpoint - Ruta del endpoint
+ * @returns {string} URL completa formateada
+ */
+const buildUrl = (endpoint) => {
+  // Elimina cualquier /api duplicado
+  const cleanEndpoint = endpoint.replace(/^\/?api\//, "");
+  return `${API_PREFIX}/${cleanEndpoint}`;
+};
+
+/**
+ * Realiza una petición GET a la API, sin token, usado principalmente para iniciar sesión con un usuario cuando aún no se ha guardado token, o para comprobar si existe un usuario dado el nickname y email (en registro)
+ * @param {string} endpoint - Ruta del endpoint
+ * @returns {Promise<Object>} Respuesta de la API parseada como JSON
+ * @throws {Error} Si la respuesta no es exitosa
+ */
+const get = async (endpoint) => {
+  const url = buildUrl(endpoint);
+  const response = await fetch(`api/${url}`, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Error en la petición GET al endpoint: ${endpoint} (${response.status} ${response.statusText})`
+    );
+  }
+  const data = await response.json();
+  return data;
+};
+
+
+/**
+ * Realiza una petición GET autenticada con JWT
+ * @param {string} endpoint - Ruta del endpoint
+ * @param {string} token - Token JWT de autenticación
+ * @returns {Promise<Object>} Respuesta de la API parseada como JSON
+ * @throws {Error} Si la respuesta no es exitosa
+ */
+const get_jwt = async (endpoint, token) => {
+  const url = buildUrl(endpoint);
+  console.log(`${url}`);
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Error en la petición GET al endpoint: ${endpoint} (${response.status} ${response.statusText})`
+    );
+  }
+  const data = await response.json();
+  return data;
+};
+
+********************************* LearnWebAstro/src/api/api.js:
+
+/**
+ * Obtiene un usuario por credenciales de acceso
+ * @param {string} nickname - Nombre de usuario
+ * @param {string} passwd - Contraseña
+ * @returns {Promise<Object>} Datos del usuario
+ */
+const getUserByLogin = async (nickname, passwd) => {
+  const endpoint = `users/login/${nickname}/${passwd}`;
+  const data = await get(endpoint);
+  return data;
+};
+
+/**
+ * Obtiene tutoriales disponibles (requiere autenticación)
+ * @param {string} token - Token JWT
+ * @returns {Promise<Array>} Lista de tutoriales
+ */
+const getTutorialsAvaidable = async (token) => {
+  const endpoint = "tutorialsavaidable";
+  const data = await get_jwt(endpoint, token);
+  return data;
+};
+
+********************************* En LearnWebApi/Dockerfile:
+
+# Usamos una imagen base de PHP con Composer y Nginx
+FROM php:8.2-fpm
+
+# Instalar dependencias
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libpq-dev \
+    libzip-dev \
+    git \
+    unzip \
+    libcurl4-openssl-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install intl pdo pdo_mysql zip gd curl
+
+# Instalar Symfony CLI
+RUN curl -sS https://get.symfony.com/cli/installer | bash \
+    && mv /root/.symfony*/bin/symfony /usr/local/bin/symfony
+
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Definir el directorio de trabajo
+WORKDIR /var/www/symfony
+
+# Copiar los archivos de la aplicación Symfony
+COPY . .
+
+# Instalar dependencias de Symfony (Composer)
+RUN composer install --no-interaction --prefer-dist
+
+# Exponer el puerto 8000
+EXPOSE 8000
+
+# Comando para ejecutar Symfony en modo de desarrollo
+CMD ["symfony", "server:start", "--no-tls", "--allow-http", "--allow-all-ip", "--port=8000"]
+
+************************************* En LearnWebApi/docker-compose.yaml
+
+services:
+  backend:
+    ports:
+      - "8000:8000"
+
+************************************* En LearnWebApi/.env
+
+CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1|frontend|backend)(:[0-9]+)?$'
+
+************************************ En LearnWebApi/.env.local
+
+.env.local
+
+*********************************** En LearnWebApi/config/packages/nelmio_cors.yaml
+
+nelmio_cors:
+  defaults:
+    allow_credentials: true
+    allow_origin: ["*"] # Cambiar a ['http://frontend:4321'] o ['http://localhost:4321'] si deseas restringir
+    allow_headers: ["Content-Type", "Authorization"]
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    max_age: 3600
+  paths:
+    "^/api/":
+      allow_origin: ["*"]
+      allow_methods: ["*"]
+      allow_headers: ["Content-Type", "Authorization"]
+
+********************************* En LearnWebApi/config/packages/security.yaml
+
+security:
+  password_hashers:
+    App\Entity\User:
+      algorithm: "auto"
+      cost: 15
+
+  providers:
+    app_user_provider:
+      entity:
+        class: App\Entity\User
+        property: id
+
+  firewalls:
+    login:
+      pattern: ^/api/users/login
+      stateless: true
+      json_login:
+        check_path: /api/users/login
+        username_path: nickname
+        password_path: passwd
+        success_handler: lexik_jwt_authentication.handler.authentication_success
+        failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+    api:
+      pattern: ^/api
+      stateless: true
+      jwt: ~
+
+  access_control:
+    - { path: ^/api/users/login, roles: PUBLIC_ACCESS }
+    - { path: ^/api/users/register, roles: PUBLIC_ACCESS }
+    - { path: ^/api, roles: ROLE_LEARNER }
+    - { path: ^/admin, roles: ROLE_ADMIN }
+
+
+
+--------------------------------------------------------------------------------
+
+Github - Subirlo al repositorio, commits, etc, bajarlo del repositorio...
+
+--------------------------------------------------------------------------------
+
+Instalación y ejecución del proyecto en local
+
+El proyecto usa Astro, Symfony y mysql
+
+1. Instalar MySQL y ejecutar:
+
+- Debian/Ubuntu:
+
+sudo apt update && sudo apt install mysql-server
+systemctl start mysql
+
+- En Windows podemos descargarlo desde esta URL: https://dev.mysql.com/downloads/installer/
+INICIARLO???
+
+*** Ya podemos acceder a la BBDD, desde el navegador: localhost/phpMyAdmin (usuario root passwd root) o desde: ***
+mysql -u root -p
+*** Si pide contraseña, root ***
+
+*** Pasos extra opcionales: crear un usuario para la BBDD ***
+CREATE DATABASE LearnWeb;
+CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON LearnWeb.* TO 'user'@'localhost';
+FLUSH PRIVILEGES;
+
+*** Podemos comprobar que el usuario tiene acceso a la BBDD con el siguiente comando ***
+mysql -u user -p LearnWeb
+
+2. Configurar Symfony:
+
+*** Instalamos PHP ***
+*** En ubuntu/debian ***
+sudo apt update
+sudo apt install php php-cli php-fpm php-mysql php-curl php-zip php-xml php-mbstring php-intl
+*** En Windows accedemos a este enlace https://windows.php.net/download/ y elegimos la versión Non-Thread Safe
+*** luego extraemos el ZIP en C:\php ***
+*** Configuramos el PATH abriendo "Editar variables de entorno del sistema" (búscalo en la barra de busqueda de windows) y en Path agregamos C:\php
+
+*** Verificamos la instalación ***
+php -v
+
+*** Instalamos Composer ***
+*** En Linux ***
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+*** Movemos composer a un directorio global ***
+mv composer.phar /usr/local/bin/composer
+*** En Windows descargamos el instalador desde https://getcomposer.org/download/ en manual download ***
+*** Ejecutamos el instalador y nos aseguramos de marcar la opción de "Add to PATH" ***
+
+*** verificamos la instalación ***
+composer -v
+
+*** Una vez instalados PHP y Composer, nos vamos a la raiz del backend LearnWebApi e instalamos las dependencias ***
+composer install
+
+*** OPCIONAL: Si has creado un nuevo usuario puedes configurar la DATABASE_URL del archivo .env del backend ***
+DATABASE_URL="mysql://user:password@127.0.0.1:3306/learnweb_db?serverVersion=8.0" 
+
+*** Creamos la BBDD, si aun no existe (si creaste un nuevo usuario probablemente la hayas creado) ***
+php bin/console doctrine:database:create
+*** Ejecutamos las migraciones para crear las tablas ***
+php bin/console doctrine:migrations:migrate
+
+*** Iniciamos el servidor Symfony con: ***
+symfony server:start
+*** El backend estará en http://localhost:8000 y http://127.0.0.1:8000
+
+*** Podemos comprobar que está funcionando con ***
+symfony server:status
+
+3. Configurar Astro
+
+*** Instalamos Node.js ***
+*** Ubuntu/debian ***
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+*** En windows descargamos Node.js (versión LTS) desde https://nodejs.org/es ***
+
+
+*** Verificamos la instalación ***
+node -v
+
+*** En la carpeta del frontend ***
+npm install
+
+*** Una vez instaladas las dependencias, podemos iniciar el frontend: ***
+npm run dev
+*** Accesible en http://localhost:4321 ***
+
+*** Si quieres ver que todos los servicios están funcionando en sus respectivos puertos: ***
+sudo lsof -i :4321,3306,8000
+*** Deberías ver mysql, Symfony y node ***
+*** O en WINDOWS ***
+netstat -ano | findstr ":4321 :3306 :8000"
+
+
+
+
+

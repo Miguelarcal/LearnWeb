@@ -127,6 +127,6 @@ class __TwigTemplate_7e8356c8f5ad2d349693c47470f6e6d4 extends Template
 
     <a href=\"{{ path('app_page_index') }}\">back to list</a>
 {% endblock %}
-", "page/new.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/page/new.html.twig");
+", "page/new.html.twig", "/var/www/symfony/templates/page/new.html.twig");
     }
 }

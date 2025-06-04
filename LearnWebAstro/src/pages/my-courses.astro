@@ -1,0 +1,43 @@
+---
+import Layout from '@layouts/Layout.astro';
+import CourseCard from '@components/CourseCard.astro';
+import { getMyCourses } from '@api/useCases';
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import { jwtDecode } from "jwt-decode";
+
+const user_token = Astro.cookies.get("jwt_token") ? Astro.cookies.get("jwt_token").value : null;
+
+const user_token_data = jwtDecode(user_token);
+
+// Obtiene los cursos del usuario de esta sesión
+const courses = await getMyCourses(user_token_data['id'], user_token);
+---
+
+<Layout title="Mis cursos">
+    <main>
+        <h1>Estos son tus cursos {user_token_data['nickname']}</h1>
+        <div class="minicards-container">
+            <ul role="list" class="link-minicard-grid">
+                <!-- Mapeamos los cursos y los mostramos en "cartas" -->
+                {courses.map((course) => (
+                    <CourseCard 
+                        id={course.id}
+                        name={course.name}
+                        description={course.description}
+                        rating='ni'
+                        ratingCount='ni'
+                        author={course.author}
+                        hidden={course.hidden}
+                        user_role={'NO_ROLE'}
+                        user_id={user_token_data['id']}
+                        add_date={course.addDate}
+                        mod_date={course.modDate}
+                        difficulty={course.difficulty}
+                    />
+                ))}
+            </ul>
+        </div>
+    </main>
+    <ArrowUp />
+</Layout>

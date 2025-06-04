@@ -40,4 +40,26 @@ class TutorialInCourseRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findTutorialsFromCourse($course): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.course = :course')
+            ->setParameter('course', $course)
+            ->orderBy('t.orderNumber', 'ASC')
+            // ->setMaxResults(10)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    public function findOneById($id): ?TutorialInCourse
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
 }

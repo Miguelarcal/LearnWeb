@@ -1,0 +1,238 @@
+---
+import '@styles/minicards.css';
+import ArrowUp from '@components/ArrowUp.astro';
+import '@styles/alltutorial.css';
+
+interface Props {
+    id: string;
+}
+
+// ID del curso que se le puede pasar (o no) mediante props
+const { id } = Astro.props;
+---
+
+<div data-course={id} style="display: none" id="course"></div>
+<p><input class="course-input course-title-input" type="text" placeholder="Título..." id="course-title-input"/></p>
+<p><input class="course-input" type="text" placeholder="Descripción..." id="course-description-input"/></p>
+<select class="course-select" name="Difficulty" id="difficulty-select">
+    <option value="beginner" class="option">Principiante</option>
+    <option value="intermediate" class="option">Intermedio</option>
+    <option value="advanced" class="option">Avanzado</option>
+</select>
+<div class="section-title">Incluidos:</div>
+<div id="tutorials-selected-list" class="tutorials-grid"></div>
+<div class="section-title">Disponibles:</div>
+<div id="tutorials-avaidable-list" class="tutorials-grid"></div>
+<button class="btn btn-primary" id="done-button">Listo</button>
+<ArrowUp/>
+
+<script>
+    import { getCourseById, getTutorialsFromCourse, getMyTutorials, deleteTutorialInCourse, newTutorialInCourse, updateCourse, customEndpointJwt, newCourse } from '@api/useCases';
+    import { getDecodedToken, getToken } from '@utils/get_token';
+    import Swal from 'sweetalert2';
+
+    const token = getToken();
+
+    const user_token_decoded = getDecodedToken();
+
+    // Obtenemos el id del curso que se almacena en un dataset, es posible que esté vacío
+    let course_id = document.getElementById("course").dataset.course;
+
+    // Si hay id del curso, obtenemos el curso, si no null
+    let course = course_id ? await getCourseById(course_id, token) : null;
+
+    // Si hay curso obtenemos el autor, si no usamos el de la sesión actual ya que si no hay curso es indicatorio de que estamos creando un curso
+    let author = course ? await customEndpointJwt(course.author, token) : await customEndpointJwt(`/api/users/${user_token_decoded['id']}`, token);
+
+    // Arrays que inicializamos vacíos para rellenarlos luego
+    let array_tut_course = [];
+    let tutorials_course = [];
+
+    // Obtenemos algunos elementos HTML, los inputs básicamente, que son los que editamos o rellenamos
+    const title = document.getElementById("course-title-input");
+    const description = document.getElementById("course-description-input");
+    const difficulty = document.getElementById("difficulty-select");
+
+    if(course){
+
+        // Si hay curso, es edición, por lo que rellenamos los inputs con los valores del curso que estamos editando
+        title['value'] = course.name,
+        description['value'] = course.description,
+        difficulty['value'] = course.difficulty
+
+        // Obtenemos los tutoriales relacionados a este curso
+        tutorials_course = await getTutorialsFromCourse(course_id, token);
+
+        // Iteramos sobre los tutoriales para obtener la información de cada uno y guardarlo en un array
+        for (const tut of tutorials_course) {
+            const tutorial = await customEndpointJwt(tut.tutorial, token);
+            if(tutorial) {
+                array_tut_course.push(tutorial);
+            }
+        };
+    }
+
+    // Div de tutoriales disponibles (vacío al principio)
+    const tutorials_av_list = document.getElementById("tutorials-avaidable-list");
+    // Array que rellenaremos conforme seleccionemos tutoriales
+    let tutorials_selected_array = [];
+    // Obtenemos los tutoriales que tiene disponibles el autor de este curso que estamos editando / creando, que son los que podremos usar para el curso
+    const tutorials_user = await getMyTutorials(author.id, token);
+    
+    /**
+     * Función para añadir un tutorial (tanto al div de disponibles y/o seleccionados como al array)
+     * @param tut tutorial que vamos a añadir
+     * @param add parámetro que indica si el tutorial se añade porque forma parte de un curso que estamos editando (true) o si dependeremos del botón de "añadir" para añadirlo (false)
+     */
+    function addTut (tut, add){
+        // Creamos un elemento div para el tutorial que veremos disponible (o añadido)
+        const tutorial = document.createElement("div");
+        tutorial.id = `tutorial-${tut.id}`;
+        tutorial.className = "tutorial-card tutorial-content";
+        const title = document.createElement("h3");
+        title.className = "tutorial-title";
+        title.innerText = tut.name;
+        const description = document.createElement("p");
+        description.innerText = tut.description;
+        description.className = "tutorial-description";
+        // Botón de añadir
+        const add_button = document.createElement("button");
+        add_button.className = "tutorial-btn tutorial-btn-add";
+        add_button.innerText = "Añadir";
+        const button_div = document.createElement("div");
+        button_div.className = "tutorial-actions";
+        button_div.appendChild(add_button);
+        tutorial.appendChild(title);
+        tutorial.appendChild(description);
+        tutorial.appendChild(button_div);
+        tutorial.className = 'tutorial-card';
+        tutorials_av_list.appendChild(tutorial);
+        /**
+         * Función que añade el tutorial al contenedor de seleccionados y al array de seleccionados (o los quita (delete_button))
+         */
+        const add_func = () => {
+            // Obtenemos el contenedor de los tutoriales seleccionados
+            const tutorials_selected = document.getElementById("tutorials-selected-list");
+            // Quitamos el botón de añadir
+            button_div.removeChild(add_button);
+            tutorials_av_list.removeChild(tutorial);
+            tutorials_selected.appendChild(tutorial);
+            // Creamos el botón de quitar y posteriormente lo añadimos al div del tutorial
+            const delete_button = document.createElement("button");
+            delete_button.innerText = "Quitar";
+            delete_button.className = "tutorial-btn tutorial-btn-remove";
+            button_div.appendChild(delete_button);
+            // Añadimos el tutorial al array de seleccionados
+            tutorials_selected_array.push(tut);
+            // Si pulsamos el botón de borrar
+            delete_button.addEventListener("click", () => {
+                // Quitamos el botón de quitar y añadimos el de añadir
+                button_div.removeChild(delete_button);
+                tutorials_selected.removeChild(tutorial);
+                tutorials_av_list.appendChild(tutorial);
+                button_div.appendChild(add_button);
+                // Filtramos el array de seleccionados para excluir el que queremos quitar
+                tutorials_selected_array = tutorials_selected_array.filter((t) => t.id != tut.id);
+            });
+        }
+
+        // Si add es true ejecutamos la función de añadir
+        if (add) {
+            add_func();
+        }
+
+        // Si pulsamos el botón de añadir ejecutamos la función de añadir
+        add_button.addEventListener("click", () => {
+            add_func();
+        });
+    };
+
+    // Por cada tutorial que se encuentra en el array de tutoriales del curso (editando), utilizamos la función addTut con add en true para que sea añadido automáticamente a los seleccionados
+    for (const tut_add of array_tut_course) {
+        addTut(tut_add, true);
+    }
+
+    // Por cada tutorial de los tutoriales del usuario
+    for (const tut of tutorials_user) {
+        let isin = false;
+        // Comprobamos que no se encuentra entre los tutoriales del curso, cambia el valor de isin a true si lo está
+        for (const tut_added of array_tut_course){
+            tut_added['id'] === tut['id'] ? isin = true : false;
+        }
+        // Si no se encuentra entre los tutoriales del curso utilizamos la función addTut con add en false para añadirlo a los disponibles
+        if(!isin) {
+            addTut(tut, false);
+        }
+    }
+
+    // Botón de listo (terminado de editar/crear tutorial)
+    const done_button = document.getElementById("done-button");
+    // Si pinchamos en el botón
+    done_button.addEventListener("click", async () => {
+        // Comprobaciones básicas de los inputs
+        if(title['value'] == "" || description['value'] == ""){
+            Swal.fire({
+                title: "Error",
+                text: "Debes de rellenar los campos título y descripción del curso",
+                icon: "error"
+            });
+        } else {
+            // Confirmaciones con sweetalert2
+            Swal.fire({
+                title: "¿Seguro?",
+                text: course ? "Estás a punto de editar este curso" : "Estas a punto de crear este curso",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Confirmar",
+                cancelButtonText: "Cancelar"
+            }).then(async (result) => {
+                // Si confirma que si
+                if(result.isConfirmed){
+                    if(course){
+                        // Si estamos editando un curso primero borramos los tutoriales asociados a este para poder guardar los nuevos a posteriori
+                        tutorials_course.map(async (tut) => {
+                            await deleteTutorialInCourse(tut.id, token);
+                        })
+                    }
+                    // Datos del curso que pasaremos
+                    const course_obj = {
+                        name: title['value'],
+                        description: description['value'],
+                        author: author['id'],
+                        difficulty: difficulty['value'],
+                    }
+                    if (course) {
+                        // Actualizamos el curso
+                        await updateCourse(course_obj, course_id, token);
+                    } else {
+                        // Creamos el curso
+                        course_id = await newCourse(course_obj, token);
+                    }
+                    let tut_order_cont = 1;
+                    tutorials_selected_array.map(async (tut) => {
+                        // Datos de cada "tutorial en curso" que pasaremos, que es básicamente id del curso, id del tutorial y orden dentro del curso
+                        const tutorial_obj = {
+                            course: course_id,
+                            tutorial: tut.id,
+                            order_number: tut_order_cont,
+                        }
+                        tut_order_cont++;
+                        // Guardamos este nuevo "tutorial en curso"
+                        await newTutorialInCourse(tutorial_obj, token);
+                    });
+                    // Avisos con sweetalert2
+                    Swal.fire({
+                        title: course ? "Actualizado" : "Creado",
+                        text: course ? `El curso se ha actualizado con éxito` : 'El curso se ha guardado con éxito',
+                        icon: "success"
+                    }).then(() => {
+                        // Nos dirige a nuestros cursos
+                        window.location.replace("/my-courses");
+                    });
+                }
+            });
+        }
+    });
+</script>

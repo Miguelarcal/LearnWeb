@@ -89,6 +89,6 @@ class __TwigTemplate_42982831082f557f706d178aef46c2ce extends Template
     {{ form_widget(form) }}
     <button class=\"btn\">{{ button_label|default('Save') }}</button>
 {{ form_end(form) }}
-", "page/_form.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/page/_form.html.twig");
+", "page/_form.html.twig", "/var/www/symfony/templates/page/_form.html.twig");
     }
 }

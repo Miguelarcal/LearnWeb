@@ -17,7 +17,7 @@ class NelmioCorsConfig implements \Symfony\Component\Config\Builder\ConfigBuilde
     private $_usedProperties = [];
 
     /**
-     * @default {"allow_credentials":false,"allow_origin":[],"allow_headers":[],"allow_methods":[],"expose_headers":[],"max_age":0,"hosts":[],"origin_regex":false,"forced_allow_origin_value":null,"skip_same_as_origin":true}
+     * @default {"allow_credentials":false,"allow_origin":[],"allow_headers":[],"allow_methods":[],"allow_private_network":false,"expose_headers":[],"max_age":0,"hosts":[],"origin_regex":false,"forced_allow_origin_value":null,"skip_same_as_origin":true}
     */
     public function defaults(array $value = []): \Symfony\Config\NelmioCors\DefaultsConfig
     {

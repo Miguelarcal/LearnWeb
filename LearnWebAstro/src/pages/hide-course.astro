@@ -1,0 +1,28 @@
+---
+import Layout from '@layouts/Layout.astro';
+import '@styles/minicards.css';
+import { changeHiddenCourse, getCourseById } from '@api/useCases';
+import { jwtDecode } from "jwt-decode";
+
+const base_path = import.meta.env.BASE_URL;
+const id = Astro.url.searchParams.get('id');
+
+const user_token = Astro.cookies.get("jwt_token") ? Astro.cookies.get("jwt_token").value : null;
+
+const user_token_data = jwtDecode(user_token);
+
+const course = await getCourseById(id, user_token);
+
+// Si el usuario de esta sesión no es administrador ni el autor de este curso redirige a cursos
+if (user_token_data['role'] != 'ROLE_ADMIN' && course.author != `/api/users/${user_token_data['id']}`) {
+    return Astro.redirect(`${base_path}/courses`);
+} else {
+    // Si es administrador o el autor, procede a cambiar el valor de hidden del curso con una función que se comunica con la API
+    await changeHiddenCourse(id, user_token);
+    return Astro.redirect(`${base_path}/courses`);
+}
+---
+
+<Layout title="Ocultar/mostrar curso">
+    Ocultar/mostrar curso con id: {id}
+</Layout>

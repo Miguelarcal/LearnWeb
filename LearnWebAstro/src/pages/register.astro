@@ -1,0 +1,137 @@
+---
+import ArrowUp from '@components/ArrowUp.astro';
+import Layout from '@layouts/Layout.astro';
+import '@styles/register.css';
+---
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnWeb - Registro</title>
+</head>
+<form id="registerForm">
+    <div class="form-header">
+        <img src="/public/LearnWebLogoB.png" alt="LearnWeb Logo" class="form-logo"/>
+        <h2>Registro en LearnWeb</h2>
+    </div>
+    <label>
+        Correo:
+        <input type="text" name="email" required id="email"/>
+    </label>
+    <label>
+        Nombre de usuario:
+        <input type="text" name="nickname" required id="nickname"/>
+    </label>
+    <label>
+        Contraseña:
+        <input type="password" name="passwd" required id="passwd"/>
+    </label>
+    <label>
+        Repita contraseña:
+        <input type="password" name="passwd-revalid" required id="passwd02"/>
+    </label>
+    <button>Enviar</button>
+    <p>¿Ya tienes una cuenta?, en ese caso, <a href="/login">inicia sesión</a></p>
+</form>
+
+<script>
+    import { checkUserExistence, register } from "@api/useCases";
+    import Swal from "sweetalert2";
+    // Al darle a "enviar"
+    document.getElementById("registerForm").addEventListener("submit", async function (e){
+        e.preventDefault();
+        // Obtenemos los inputs del formulario
+        const email = document.getElementById("email")['value'];
+        const nickname = document.getElementById("nickname")['value'];
+        const passwd = document.getElementById("passwd")['value'];
+        const passwd02 = document.getElementById("passwd02")['value'];
+        let errors = false;
+        // Patrón válido para el email (@gmail.com o @hotmail.com)
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com)$/;
+        // Validación de errores, como tipo de dato y si lo ha rellenado
+        if (typeof nickname !== "string" || nickname.length < 1) {
+            errors = true;
+            Swal.fire({
+                title: 'Introduce un nombre de usuario',
+            });
+        }
+        if (typeof passwd !== "string" || passwd.length < 1) {
+            errors = true;
+            Swal.fire({
+                title: 'Introduce una contraseña',
+            });
+        }
+        if (typeof email !== "string" || email.length < 1) {
+            errors = true;
+            Swal.fire({
+                title: 'Introduce un email',
+            });
+        }
+        if (typeof passwd02 !== "string" || passwd02.length < 1) {
+            errors = true;
+            Swal.fire({
+                title: 'Valida tu contraseña',
+            });
+        }
+        // Si la primera contraseña no coincide con la segunda
+        if (passwd !== passwd02) {
+            errors = true;
+            Swal.fire({
+                title: 'La confirmación de contraseña no coincide con la primera introducida',
+            });
+        }
+        // Probamos si el email introducido sigue el patrón que hemos establecido
+        if(!emailPattern.test(email)){
+            errors = true;
+            Swal.fire({
+                title: 'El email introducido no es válido',
+            });
+        }
+        if (!errors) {
+            // Lógica si no hay errores
+            // Comprueba si el usuario ya existe con su nickname y email
+            const existence = await checkUserExistence(nickname, email);
+            if(existence == 0) {
+                // Confirmación de si queremos crearlo
+                Swal.fire({
+                    title: '¿Seguro?',
+                    text: '¿Seguro de querer registrarte con estos datos?',
+                    showDenyButton: true,
+                    confirmButtonText: 'Si',
+                    denyButtonText: 'No',
+                }).then(async (result) => {
+                    // Si le damos a que si
+                    if(result.isConfirmed) {
+                        // Registramos al administrador
+                        const user_created = await register(nickname, email, passwd);
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Registro exitoso!',
+                            text: 'Redirigiendo a login...',
+                            timer: 2000,
+                            willClose: () => {
+                                window.location.href = '/login'; // Nos dirige al login en 2 segundos tras la confirmación
+                            }
+                        });
+                    } else {
+                        Swal.fire('No registrado');
+                    }
+                });
+            } else if(existence == 1) {
+                // Si existe nos da aviso de si es por nickname (la llamada a la API nos ha devuelto 1)
+                Swal.fire({
+                    title: 'Nickname ya existente, introduce otro',
+                });
+            } else if(existence == 2){
+                // Si existe nos da aviso de si es por email (la llamada a la API nos ha devuelto 2)
+                Swal.fire({
+                    title: 'Email ya existente, introduce otro o inicia sesión si ya tienes una cuenta con este email',
+                });
+            }
+        } else {
+            // Resetea los errores para volver a intentarlo
+            errors = false;
+        }
+    });
+</script>

@@ -14,6 +14,7 @@ class PathsConfig
     private $allowOrigin;
     private $allowHeaders;
     private $allowMethods;
+    private $allowPrivateNetwork;
     private $exposeHeaders;
     private $maxAge;
     private $hosts;
@@ -23,7 +24,7 @@ class PathsConfig
     private $_usedProperties = [];
 
     /**
-     * @default false
+     * @default null
      * @param ParamConfigurator|bool $value
      * @return $this
      */
@@ -75,6 +76,19 @@ class PathsConfig
     }
 
     /**
+     * @default false
+     * @param ParamConfigurator|bool $value
+     * @return $this
+     */
+    public function allowPrivateNetwork($value): static
+    {
+        $this->_usedProperties['allowPrivateNetwork'] = true;
+        $this->allowPrivateNetwork = $value;
+
+        return $this;
+    }
+
+    /**
      * @param ParamConfigurator|list<ParamConfigurator|mixed>|mixed $value
      *
      * @return $this
@@ -114,7 +128,7 @@ class PathsConfig
     }
 
     /**
-     * @default false
+     * @default null
      * @param ParamConfigurator|bool $value
      * @return $this
      */
@@ -140,7 +154,7 @@ class PathsConfig
     }
 
     /**
-     * @default true
+     * @default null
      * @param ParamConfigurator|bool $value
      * @return $this
      */
@@ -176,6 +190,12 @@ class PathsConfig
             $this->_usedProperties['allowMethods'] = true;
             $this->allowMethods = $value['allow_methods'];
             unset($value['allow_methods']);
+        }
+
+        if (array_key_exists('allow_private_network', $value)) {
+            $this->_usedProperties['allowPrivateNetwork'] = true;
+            $this->allowPrivateNetwork = $value['allow_private_network'];
+            unset($value['allow_private_network']);
         }
 
         if (array_key_exists('expose_headers', $value)) {
@@ -233,6 +253,9 @@ class PathsConfig
         }
         if (isset($this->_usedProperties['allowMethods'])) {
             $output['allow_methods'] = $this->allowMethods;
+        }
+        if (isset($this->_usedProperties['allowPrivateNetwork'])) {
+            $output['allow_private_network'] = $this->allowPrivateNetwork;
         }
         if (isset($this->_usedProperties['exposeHeaders'])) {
             $output['expose_headers'] = $this->exposeHeaders;

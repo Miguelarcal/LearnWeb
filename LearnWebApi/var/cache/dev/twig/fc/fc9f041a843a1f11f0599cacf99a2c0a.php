@@ -134,6 +134,6 @@ class __TwigTemplate_68006eafcb437049a832327741b81ce6 extends Template
 
     {{ include('user/_delete_form.html.twig') }}
 {% endblock %}
-", "user/edit.html.twig", "/home/miguelarroyo/GitProjects/LearnWeb/Backend/LearnWeb_database/templates/user/edit.html.twig");
+", "user/edit.html.twig", "/var/www/symfony/templates/user/edit.html.twig");
     }
 }
