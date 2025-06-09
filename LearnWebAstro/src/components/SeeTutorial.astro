@@ -3,7 +3,7 @@ import '@styles/seetutorial.css';
 import { getTutorialById, averageTutorialScore, customEndpointJwt, checkUserBan } from '@api/useCases';
 import { formatISODateAuto } from '@utils/formatDate';
 import { formatFloat } from '@utils/formatFloat';
-import { decodeToken } from '@utils/get_token';
+import { decodeToken } from '@utils/getToken.js';
 
 interface Props {
     id: string;
@@ -96,8 +96,8 @@ const user_banned = await checkUserBan(user_id, token);
 </div>
 
 <script>
-    import { getDecodedToken, getToken } from '../utils/get_token'
-    import { newTutorialScore, getaTutorialScore, updateTutorialScore, checkUserBan } from '../api/useCases'
+    import { getDecodedToken, getToken } from '@utils/getToken'
+    import { newTutorialScore, getaTutorialScore, updateTutorialScore, checkUserBan } from '@api/useCases'
     import Swal from 'sweetalert2';
 
     document.addEventListener('DOMContentLoaded', async () => {

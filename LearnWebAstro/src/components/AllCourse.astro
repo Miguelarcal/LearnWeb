@@ -28,7 +28,7 @@ const { id } = Astro.props;
 
 <script>
     import { getCourseById, getTutorialsFromCourse, getMyTutorials, deleteTutorialInCourse, newTutorialInCourse, updateCourse, customEndpointJwt, newCourse } from '@api/useCases';
-    import { getDecodedToken, getToken } from '@utils/get_token';
+    import { getDecodedToken, getToken } from '@utils/getToken';
     import Swal from 'sweetalert2';
 
     const token = getToken();

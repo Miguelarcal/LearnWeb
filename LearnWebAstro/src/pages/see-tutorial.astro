@@ -2,7 +2,7 @@
 import Layout from '@layouts/Layout.astro';
 import '@styles/minicards.css';
 import ArrowUp from '@components/ArrowUp.astro';
-import SeTutorial from '@components/SeeTutorial.astro';
+import SeeTutorial from '@components/SeeTutorial.astro';
 
 const id = Astro.url.searchParams.get('id');
 ---
@@ -10,7 +10,7 @@ const id = Astro.url.searchParams.get('id');
 <Layout title="Ver tutoriales">
     <main>
         <!-- Llamamos al componente de SeeTutorial.astro para mostrar el tutorial pasado el id, y como es el único que mostramos en esa página mostramos los detalles -->
-        <SeTutorial 
+        <SeeTutorial 
             id={id}
             show_details='yes'
         />

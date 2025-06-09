@@ -28,7 +28,7 @@ const { id, edit } = Astro.props;
 <script>
     import { newTutorial, newPage, newBlock, getTutorialById, customDelete, updateTutorial, customEndpointJwt } from '@api/useCases';
     import Swal from 'sweetalert2';
-    import { getDecodedToken, getToken } from '@utils/get_token';
+    import { getDecodedToken, getToken } from '@utils/getToken';
 
     const token = getToken();
 

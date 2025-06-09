@@ -6,7 +6,7 @@ import ArrowUp from '@components/ArrowUp.astro';
 import SeeTutorial from '@components/SeeTutorial.astro';
 import { customEndpointJwt, getCourseById, checkUserBan, averageCourseScore } from '@api/useCases';
 import { formatISODateAuto } from '@utils/formatDate';
-import { decodeToken } from '@utils/get_token';
+import { decodeToken } from '@utils/getToken';
 import { formatFloat } from '@utils/formatFloat';
 
 const base_path = import.meta.env.BASE_URL;
@@ -108,8 +108,8 @@ const avr_score = await averageCourseScore(course.id, token);
 </style>
 
 <script>
-    import { getDecodedToken, getToken } from '../utils/get_token'
-    import { newCourseScore, getaCourseScore, updateCourseScore, checkUserBan } from '../api/useCases'
+    import { getDecodedToken, getToken } from '../utils/getToken.js'
+    import { newCourseScore, getaCourseScore, updateCourseScore, checkUserBan } from '@api/useCases'
     import Swal from 'sweetalert2';
 
     document.addEventListener('DOMContentLoaded', async () => {
