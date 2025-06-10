@@ -60,8 +60,6 @@ use App\Controller\ApiController;
         new Delete(),
     ]
 )]
-#[UniqueEntity(fields: ['nickname'], message: 'There is already an account with this username')]
-#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
