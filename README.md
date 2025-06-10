@@ -4,7 +4,7 @@
 
 0. [Puertos e información](#0-puertos-e-información)
 1. [Manual de Instalación](#1-manual-de-instalación)
-2. [Datos de prueba para la BBDD](#2-datos-de-prueba-para-la-ddbb)
+2. [Datos de prueba para la BBDD](#2-datos-de-prueba-para-la-base-de-datos)
 3. [Docker](#3-docker)
 
 ## 0. Puertos e información
@@ -508,7 +508,7 @@ Deberíamos ver mysql, Symfony y node
 netstat -ano | findstr ":4321 :3306 :8000"
 ```
 
-## 2. Datos de prueba para la BBDD
+## 2. Datos de prueba para la base de datos
 
 1. Los datos los tendremos en SQL directamente para introducirlos en la BBDD, así que nos metemos en la consola de MySQL
 
