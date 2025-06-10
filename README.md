@@ -1,5 +1,12 @@
 # Readme.md
 
+Índice
+
+0. [Puertos e información](#0-puertos-e-información)
+1. [Manual de Instalación](#1-manual-de-instalación)
+2. [Datos de prueba para la BBDD](#2-datos-de-prueba-para-la-ddbb)
+3. [Docker](#3-docker)
+
 ## 0. Puertos e información
 
 MySQL -> 80
@@ -590,7 +597,9 @@ Ya podemos salir de la consola
 exit
 ```
 
-## 3 Docker (no funciona)
+## 3 Docker
+
+**No funciona**
 
 La comunicación entre contenedores docker no ha funcionado correctamente.
 
